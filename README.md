@@ -1,36 +1,39 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# カケイボ
 
-## Getting Started
+同棲者（風馬・ちか子）向けの家計簿・精算アプリ。Next.js (App Router) + Supabase + Recharts。
 
-First, run the development server:
+## セットアップ
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. [supabase.com](https://supabase.com) でプロジェクトを作成する。
+2. SupabaseダッシュボードのSQL Editorで `supabase/migrations/0001_init.sql` の内容を実行する。
+3. Project Settings → API から `Project URL` と `anon public` キーを取得する。
+4. `.env.local.example` を `.env.local` にコピーし、取得した値を設定する。
+   ```
+   NEXT_PUBLIC_SUPABASE_URL=...
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+   ```
+5. 依存関係をインストールして開発サーバーを起動する。
+   ```bash
+   npm install
+   npm run dev
+   ```
+   [http://localhost:3000](http://localhost:3000) を開く（`/input` にリダイレクトされる）。
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ページ構成
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `/input` — 支出の入力（折半額をリアルタイム計算・マイナス時はエラー）
+- `/settlement` — 年月ごとの精算額・光熱費入力ステータス・明細一覧
+- `/expenses` — 月次推移グラフ・個人別比較グラフ・費目別予算消化率
+- `/fixed-costs` — 固定費（家賃・積立投資など）のマスタ管理。登録内容は初回アクセス時に自動でその月のトランザクションとして生成される（冪等）
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 認証について
 
-## Learn More
+このアプリに認証機能はない。ヘッダーの「風馬 / ちか子」切り替えはUI上の初期値プリフィルのみで、アクセス制御ではない。Supabaseの `anon` キーはクライアントに埋め込まれる前提のため、URLとキーを知っている人は誰でも読み書きできる。2人用の家計簿として許容範囲だが、より厳しくしたい場合はVercelのDeployment Protectionや `middleware.ts` でのBasic認証を検討する。
 
-To learn more about Next.js, take a look at the following resources:
+## デプロイ（Vercel）
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. GitHubにリポジトリを作成しpushする。
+2. [vercel.com](https://vercel.com) で当該リポジトリをインポートする（Next.jsは自動検出される）。
+3. Project Settings → Environment Variables に `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` を設定する。
+4. `main` へのpushで自動デプロイされ、`https://xxx.vercel.app` のURLが発行される。
+5. iPhoneのSafariでそのURLを開き、共有メニューから「ホーム画面に追加」を行うとアプリのように起動できる。

@@ -1,9 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { PAYERS, type PayerId } from "@/lib/types";
 
 const STORAGE_KEY = "currentPayer";
+
+function readStoredPayer(): PayerId {
+  if (typeof window === "undefined") return PAYERS[0];
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  return stored === "風馬" || stored === "ちか子" ? stored : PAYERS[0];
+}
 
 interface CurrentUserContextValue {
   currentUser: PayerId;
@@ -15,17 +21,11 @@ const CurrentUserContext = createContext<CurrentUserContextValue | null>(null);
 // Presentation-only (prefills the payer selector) — not access control.
 // There is no auth in this app, so nothing stops either person picking the other's name.
 export function CurrentUserProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUserState] = useState<PayerId>(PAYERS[0]);
-
-  useEffect(() => {
-    // One-time sync from localStorage on mount — localStorage doesn't exist
-    // during SSR, so this can't be done as a lazy useState initializer.
-    const stored = window.localStorage.getItem(STORAGE_KEY);
-    if (stored === "風馬" || stored === "ちか子") {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setCurrentUserState(stored);
-    }
-  }, []);
+  // Lazy initializer reads localStorage synchronously on the client's first
+  // render (guarded for SSR) instead of via a post-mount effect — this
+  // avoids a race where a descendant (e.g. TransactionForm) captures its
+  // own initial payer value before an effect-based sync would have run.
+  const [currentUser, setCurrentUserState] = useState<PayerId>(readStoredPayer);
 
   function setCurrentUser(payer: PayerId) {
     setCurrentUserState(payer);
