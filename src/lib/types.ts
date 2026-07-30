@@ -9,6 +9,19 @@ export const UTILITY_CATEGORY_IDS = ["electricity", "gas", "water"] as const;
 // list (but still selectable on /fixed-costs).
 export const FIXED_COST_ONLY_CATEGORY_IDS = ["rent", "investment", "subscription"] as const;
 
+// Fixed/utility costs (and the catch-all "other") aren't meaningful to set a
+// discretionary monthly budget against, so they're excluded from the budget
+// editor and progress display on /expenses.
+export const BUDGET_HIDDEN_CATEGORY_IDS = [
+  "rent",
+  "electricity",
+  "water",
+  "gas",
+  "investment",
+  "subscription",
+  "other",
+] as const;
+
 export interface Category {
   id: string;
   name: string;

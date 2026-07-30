@@ -10,7 +10,7 @@ import { MonthlyTrendChart } from "@/components/MonthlyTrendChart";
 import { PersonBreakdownChart } from "@/components/PersonBreakdownChart";
 import { BudgetProgress } from "@/components/BudgetProgress";
 import { BudgetEditor } from "@/components/BudgetEditor";
-import type { Budget, Category, MonthlyTotalRow } from "@/lib/types";
+import { BUDGET_HIDDEN_CATEGORY_IDS, type Budget, type Category, type MonthlyTotalRow } from "@/lib/types";
 
 interface Props {
   searchParams: Promise<{ months?: string }>;
@@ -53,6 +53,10 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const breakdown = aggregatePersonBreakdown(rows);
   const categoryTotals = aggregateCategoryTotalsForMonth(rows, currentYearMonth);
 
+  const budgetCategories = ((categories ?? []) as Category[]).filter(
+    (c) => !BUDGET_HIDDEN_CATEGORY_IDS.includes(c.id as (typeof BUDGET_HIDDEN_CATEGORY_IDS)[number])
+  );
+
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -77,15 +81,12 @@ export default async function ExpensesPage({ searchParams }: Props) {
           今月の費目別予算消化率
         </h2>
         <BudgetProgress
-          categories={(categories ?? []) as Category[]}
+          categories={budgetCategories}
           budgets={(budgets ?? []) as Budget[]}
           categoryTotals={categoryTotals}
         />
         <div className="mt-3">
-          <BudgetEditor
-            categories={(categories ?? []) as Category[]}
-            initialBudgets={(budgets ?? []) as Budget[]}
-          />
+          <BudgetEditor categories={budgetCategories} initialBudgets={(budgets ?? []) as Budget[]} />
         </div>
       </section>
     </div>
