@@ -13,8 +13,8 @@ export function SettlementSummary({ result }: { result: SettlementResult }) {
         </p>
       )}
       <div className="mt-4 flex justify-center gap-8 text-sm text-neutral-500 dark:text-neutral-400">
-        <span>風馬がちか子の分を負担: ¥{burdenForOther["風馬"].toLocaleString("ja-JP")}</span>
-        <span>ちか子が風馬の分を負担: ¥{burdenForOther["ちか子"].toLocaleString("ja-JP")}</span>
+        <span>風馬 相手立替: ¥{burdenForOther["風馬"].toLocaleString("ja-JP")}</span>
+        <span>ちか子 相手立替: ¥{burdenForOther["ちか子"].toLocaleString("ja-JP")}</span>
       </div>
     </div>
   );
