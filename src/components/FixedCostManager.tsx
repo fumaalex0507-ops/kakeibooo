@@ -14,10 +14,28 @@ interface FixedCostFieldsValue {
   title: string;
   categoryId: string;
   payerId: PayerId;
-  totalAmount: string;
   ownShare: string;
-  otherShare: string;
+  splitAmount: string;
   dayOfMonth: string;
+}
+
+// total_amount/own_share/other_share are derived from just two boxes: 自己負担
+// (own_share, not shared) and 折半 (the amount to split 50/50). other_share
+// (money the payer fronted entirely for the other person) isn't offered here
+// since fixed costs are always either fully one person's own expense or fully
+// split — total_amount = ownShare + splitAmount, other_share always 0.
+function fieldsToRow(fields: FixedCostFieldsValue) {
+  const ownShare = Number(fields.ownShare) || 0;
+  const splitAmount = Number(fields.splitAmount) || 0;
+  return {
+    title: fields.title,
+    category_id: fields.categoryId,
+    payer_id: fields.payerId,
+    total_amount: ownShare + splitAmount,
+    own_share: ownShare,
+    other_share: 0,
+    day_of_month: Number(fields.dayOfMonth) || 1,
+  };
 }
 
 function fixedCostToFields(fc: FixedCost): FixedCostFieldsValue {
@@ -25,9 +43,8 @@ function fixedCostToFields(fc: FixedCost): FixedCostFieldsValue {
     title: fc.title,
     categoryId: fc.category_id,
     payerId: fc.payer_id,
-    totalAmount: String(fc.total_amount),
     ownShare: String(fc.own_share),
-    otherShare: String(fc.other_share),
+    splitAmount: String(fc.total_amount - fc.own_share - fc.other_share),
     dayOfMonth: String(fc.day_of_month),
   };
 }
@@ -74,19 +91,11 @@ function FixedCostFields({
           ))}
         </select>
       </div>
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <input
           type="number"
           inputMode="numeric"
-          value={value.totalAmount}
-          onChange={(e) => onChange({ ...value, totalAmount: e.target.value })}
-          placeholder="総額"
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          required
-        />
-        <input
-          type="number"
-          inputMode="numeric"
+          min={0}
           value={value.ownShare}
           onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
           placeholder="自己負担"
@@ -95,9 +104,10 @@ function FixedCostFields({
         <input
           type="number"
           inputMode="numeric"
-          value={value.otherShare}
-          onChange={(e) => onChange({ ...value, otherShare: e.target.value })}
-          placeholder="相手立替"
+          min={0}
+          value={value.splitAmount}
+          onChange={(e) => onChange({ ...value, splitAmount: e.target.value })}
+          placeholder="折半"
           className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
         />
       </div>
@@ -225,9 +235,8 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
     title: "",
     categoryId: categories[0]?.id ?? "",
     payerId: PAYERS[0],
-    totalAmount: "",
     ownShare: "0",
-    otherShare: "0",
+    splitAmount: "0",
     dayOfMonth: "1",
   });
   const [error, setError] = useState<string | null>(null);
@@ -238,15 +247,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
 
     const { data, error } = await supabase
       .from("fixed_costs")
-      .insert({
-        title: newFields.title,
-        category_id: newFields.categoryId,
-        payer_id: newFields.payerId,
-        total_amount: Number(newFields.totalAmount) || 0,
-        own_share: Number(newFields.ownShare) || 0,
-        other_share: Number(newFields.otherShare) || 0,
-        day_of_month: Number(newFields.dayOfMonth) || 1,
-      })
+      .insert(fieldsToRow(newFields))
       .select()
       .single();
 
@@ -260,9 +261,8 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
       title: "",
       categoryId: categories[0]?.id ?? "",
       payerId: PAYERS[0],
-      totalAmount: "",
       ownShare: "0",
-      otherShare: "0",
+      splitAmount: "0",
       dayOfMonth: "1",
     });
   }
@@ -285,18 +285,9 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
   }
 
   async function saveEdit(fc: FixedCost, fields: FixedCostFieldsValue): Promise<string | null> {
-    const updates = {
-      title: fields.title,
-      category_id: fields.categoryId,
-      payer_id: fields.payerId,
-      total_amount: Number(fields.totalAmount) || 0,
-      own_share: Number(fields.ownShare) || 0,
-      other_share: Number(fields.otherShare) || 0,
-      day_of_month: Number(fields.dayOfMonth) || 1,
-    };
     const { data, error } = await supabase
       .from("fixed_costs")
-      .update(updates)
+      .update(fieldsToRow(fields))
       .eq("id", fc.id)
       .select()
       .single();
