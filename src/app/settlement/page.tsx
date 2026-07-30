@@ -73,7 +73,7 @@ export default async function SettlementPage({ searchParams }: Props) {
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">明細一覧</h2>
-        <TransactionTable transactions={rows} categories={(categories ?? []) as Category[]} />
+        <TransactionTable key={yearMonth} transactions={rows} categories={(categories ?? []) as Category[]} />
       </div>
     </div>
   );
