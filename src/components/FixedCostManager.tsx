@@ -243,11 +243,12 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
     splitAmount: "0",
     dayOfMonth: "1",
   });
-  const [error, setError] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    setError(null);
+    setAddError(null);
 
     const { data, error } = await supabase
       .from("fixed_costs")
@@ -256,7 +257,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
       .single();
 
     if (error) {
-      setError(error.message);
+      setAddError(error.message);
       return;
     }
 
@@ -282,10 +283,13 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
   }
 
   async function remove(fc: FixedCost) {
-    const { error } = await supabase.from("fixed_costs").delete().eq("id", fc.id);
-    if (!error) {
-      setFixedCosts((prev) => prev.filter((f) => f.id !== fc.id));
+    const { error: deleteError } = await supabase.from("fixed_costs").delete().eq("id", fc.id);
+    if (deleteError) {
+      setListError(deleteError.message);
+      return;
     }
+    setListError(null);
+    setFixedCosts((prev) => prev.filter((f) => f.id !== fc.id));
   }
 
   async function saveEdit(fc: FixedCost, fields: FixedCostFieldsValue): Promise<string | null> {
@@ -305,6 +309,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
+        {listError && <p className="text-sm text-red-600 dark:text-red-400">{listError}</p>}
         {fixedCosts.length === 0 && (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">固定費はまだ登録されていません。</p>
         )}
@@ -323,7 +328,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
       <form onSubmit={handleAdd} className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
         <h2 className="text-sm font-medium">固定費を追加</h2>
         <FixedCostFields categories={categories} value={newFields} onChange={setNewFields} />
-        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        {addError && <p className="text-sm text-red-600 dark:text-red-400">{addError}</p>}
         <button type="submit" className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
           追加
         </button>
