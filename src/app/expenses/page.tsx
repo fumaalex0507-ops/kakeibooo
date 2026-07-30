@@ -3,6 +3,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { aggregateCategoryTotalsForMonth, aggregateMonthlyTrend } from "@/lib/calculations";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { PersonTabs } from "@/components/PersonTabs";
+import { YearMonthPicker } from "@/components/YearMonthPicker";
 import { MonthlyTrendChart } from "@/components/MonthlyTrendChart";
 import { CategoryPieChart } from "@/components/CategoryPieChart";
 import { BudgetProgress } from "@/components/BudgetProgress";
@@ -17,7 +18,7 @@ import {
 } from "@/lib/types";
 
 interface Props {
-  searchParams: Promise<{ months?: string; payer?: string }>;
+  searchParams: Promise<{ months?: string; payer?: string; pieYear?: string; pieMonth?: string }>;
 }
 
 export default async function ExpensesPage({ searchParams }: Props) {
@@ -29,10 +30,15 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const currentYearMonth = format(now, "yyyy-MM");
   const cutoffYearMonth = format(subMonths(now, months - 1), "yyyy-MM");
 
+  const pieYear = Number(params.pieYear) || now.getFullYear();
+  const pieMonth = Number(params.pieMonth) || now.getMonth() + 1;
+  const pieYearMonth = `${pieYear}-${String(pieMonth).padStart(2, "0")}`;
+
   const supabase = createServerClient();
 
   const [
     { data: monthlyTotals, error: totalsError },
+    { data: pieTotals, error: pieError },
     { data: categories, error: catError },
     { data: budgets, error: budgetError },
   ] = await Promise.all([
@@ -41,21 +47,28 @@ export default async function ExpensesPage({ searchParams }: Props) {
       .select("*")
       .gte("year_month", cutoffYearMonth)
       .lte("year_month", currentYearMonth),
+    supabase.from("v_monthly_totals").select("*").eq("year_month", pieYearMonth).eq("payer_id", payerId),
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("budgets").select("*").eq("payer_id", payerId),
   ]);
 
-  if (totalsError || catError || budgetError) {
+  if (totalsError || pieError || catError || budgetError) {
     return (
       <p className="text-red-600 dark:text-red-400">
-        データの取得に失敗しました: {totalsError?.message ?? catError?.message ?? budgetError?.message}
+        データの取得に失敗しました:{" "}
+        {totalsError?.message ?? pieError?.message ?? catError?.message ?? budgetError?.message}
       </p>
     );
   }
 
   const rows = (monthlyTotals ?? []) as MonthlyTotalRow[];
   const trend = aggregateMonthlyTrend(rows, payerId);
-  const categoryTotals = aggregateCategoryTotalsForMonth(rows, currentYearMonth, payerId);
+  const budgetCategoryTotals = aggregateCategoryTotalsForMonth(rows, currentYearMonth, payerId);
+  const pieCategoryTotals = aggregateCategoryTotalsForMonth(
+    (pieTotals ?? []) as MonthlyTotalRow[],
+    pieYearMonth,
+    payerId
+  );
 
   const allCategories = (categories ?? []) as Category[];
   const budgetCategories = allCategories.filter(
@@ -66,17 +79,24 @@ export default async function ExpensesPage({ searchParams }: Props) {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-lg font-semibold">支出分析</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <PersonTabs current={payerId} basePath="/expenses" />
+          <YearMonthPicker
+            year={pieYear}
+            month={pieMonth}
+            basePath="/expenses"
+            yearParam="pieYear"
+            monthParam="pieMonth"
+          />
           <PeriodPicker months={months} basePath="/expenses" />
         </div>
       </div>
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          {payerId}の今月の分類構成比
+          {payerId}の分類構成比
         </h2>
-        <CategoryPieChart categories={allCategories} categoryTotals={categoryTotals} />
+        <CategoryPieChart categories={allCategories} categoryTotals={pieCategoryTotals} />
       </section>
 
       <section>
@@ -93,7 +113,7 @@ export default async function ExpensesPage({ searchParams }: Props) {
         <BudgetProgress
           categories={budgetCategories}
           budgets={(budgets ?? []) as Budget[]}
-          categoryTotals={categoryTotals}
+          categoryTotals={budgetCategoryTotals}
         />
         <div className="mt-3">
           <BudgetEditor

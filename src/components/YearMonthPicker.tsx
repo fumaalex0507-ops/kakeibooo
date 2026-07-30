@@ -1,22 +1,34 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Props {
   year: number;
   month: number; // 1-12
   basePath: string;
+  yearParam?: string;
+  monthParam?: string;
 }
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 
-export function YearMonthPicker({ year, month, basePath }: Props) {
+export function YearMonthPicker({
+  year,
+  month,
+  basePath,
+  yearParam = "year",
+  monthParam = "month",
+}: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 6 }, (_, i) => currentYear - 4 + i);
 
   function navigate(nextYear: number, nextMonth: number) {
-    router.push(`${basePath}?year=${nextYear}&month=${String(nextMonth).padStart(2, "0")}`);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(yearParam, String(nextYear));
+    params.set(monthParam, String(nextMonth).padStart(2, "0"));
+    router.push(`${basePath}?${params.toString()}`);
   }
 
   return (
