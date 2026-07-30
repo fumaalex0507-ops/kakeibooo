@@ -15,6 +15,18 @@ import { colorForCategory } from "@/lib/colors";
 import type { Category } from "@/lib/types";
 import type { CumulativeSpendByCategoryPoint } from "@/lib/calculations";
 
+// Round tick step (¥5,000 / ¥10,000 / ¥20,000 / ...) picked so the axis ends
+// up with roughly 5-6 ticks, instead of whatever odd interval Recharts'
+// default "nice" algorithm derives from an arbitrary domain max.
+const TICK_STEPS = [1000, 2000, 5000, 10000, 20000, 25000, 50000, 100000, 200000, 500000, 1000000];
+
+function pickTickStep(maxValue: number): number {
+  for (const step of TICK_STEPS) {
+    if (maxValue / step <= 6) return step;
+  }
+  return TICK_STEPS[TICK_STEPS.length - 1];
+}
+
 interface Props {
   data: CumulativeSpendByCategoryPoint[];
   categories: Category[];
@@ -33,7 +45,10 @@ export function CumulativeSpendChart({ data, categories, allCategories, budgetAm
     return Math.max(max, pointMax);
   }, 0);
   const maxBudget = Math.max(0, ...categories.map((c) => budgetAmounts[c.id] ?? 0));
-  const domainMax = maxBudget > 0 ? Math.max(maxBudget, maxCumulative) * 1.1 : undefined;
+  const rawMax = Math.max(maxBudget, maxCumulative) * 1.1 || 1000;
+  const tickStep = pickTickStep(rawMax);
+  const axisMax = Math.ceil(rawMax / tickStep) * tickStep;
+  const ticks = Array.from({ length: axisMax / tickStep + 1 }, (_, i) => i * tickStep);
 
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -43,7 +58,8 @@ export function CumulativeSpendChart({ data, categories, allCategories, budgetAm
         <YAxis
           tick={{ fontSize: 12 }}
           tickFormatter={(v) => `¥${Number(v).toLocaleString("ja-JP")}`}
-          domain={domainMax ? [0, domainMax] : undefined}
+          domain={[0, axisMax]}
+          ticks={ticks}
         />
         <Tooltip
           labelFormatter={(d) => `${d}日`}
