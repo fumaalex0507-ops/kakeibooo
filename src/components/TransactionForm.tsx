@@ -22,6 +22,8 @@ export function TransactionForm({ categories }: Props) {
   const [totalAmount, setTotalAmount] = useState("");
   const [ownShare, setOwnShare] = useState("0");
   const [otherShare, setOtherShare] = useState("0");
+  const [ownTouched, setOwnTouched] = useState(false);
+  const [otherTouched, setOtherTouched] = useState(false);
   const [activeCalculator, setActiveCalculator] = useState<"own" | "other" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -36,6 +38,10 @@ export function TransactionForm({ categories }: Props) {
   const splitAmount = total - (own + other);
 
   const hasInvalidExpression = ownResult === null || otherResult === null;
+  // Only surface the invalid-expression error once the user has left the
+  // field — "300+" is a perfectly normal mid-typing state, not a mistake.
+  const showOwnError = ownTouched && ownResult === null;
+  const showOtherError = otherTouched && otherResult === null;
   const isNegativeSplit = splitAmount < 0;
   const isTotalMissing = total <= 0;
   const canSubmit = !isNegativeSplit && !isTotalMissing && !hasInvalidExpression && !submitting;
@@ -164,12 +170,14 @@ export function TransactionForm({ categories }: Props) {
             inputMode="decimal"
             value={ownShare}
             onChange={(e) => setOwnShare(e.target.value)}
-            onBlur={() => resolveOnBlur(ownShare, setOwnShare)}
+            onFocus={() => setOwnTouched(false)}
+            onBlur={() => {
+              resolveOnBlur(ownShare, setOwnShare);
+              setOwnTouched(true);
+            }}
             className={clsx(
               "rounded-md border px-3 py-2 dark:bg-neutral-900",
-              ownResult === null
-                ? "border-red-400 dark:border-red-700"
-                : "border-neutral-300 dark:border-neutral-700"
+              showOwnError ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
             )}
           />
         </div>
@@ -190,17 +198,19 @@ export function TransactionForm({ categories }: Props) {
             inputMode="decimal"
             value={otherShare}
             onChange={(e) => setOtherShare(e.target.value)}
-            onBlur={() => resolveOnBlur(otherShare, setOtherShare)}
+            onFocus={() => setOtherTouched(false)}
+            onBlur={() => {
+              resolveOnBlur(otherShare, setOtherShare);
+              setOtherTouched(true);
+            }}
             className={clsx(
               "rounded-md border px-3 py-2 dark:bg-neutral-900",
-              otherResult === null
-                ? "border-red-400 dark:border-red-700"
-                : "border-neutral-300 dark:border-neutral-700"
+              showOtherError ? "border-red-400 dark:border-red-700" : "border-neutral-300 dark:border-neutral-700"
             )}
           />
         </div>
       </div>
-      {hasInvalidExpression && (
+      {(showOwnError || showOtherError) && (
         <p className="text-sm text-red-600 dark:text-red-400">
           計算式が正しくありません（数字と + − × ÷ ( ) のみ使えます）。
         </p>
