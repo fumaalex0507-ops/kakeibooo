@@ -21,7 +21,7 @@ export function TrendCategoryTabs({ categories, current, basePath }: Props) {
     } else {
       params.delete("trendCategory");
     }
-    router.push(`${basePath}?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
   }
 
   return (

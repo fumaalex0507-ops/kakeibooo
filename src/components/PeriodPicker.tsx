@@ -27,7 +27,7 @@ export function PeriodPicker({ months, isCustom, basePath }: Props) {
       params.delete("trendToMonth");
       params.set("months", value);
     }
-    router.push(`${basePath}?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
   }
 
   return (

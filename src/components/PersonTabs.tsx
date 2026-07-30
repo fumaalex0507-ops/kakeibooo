@@ -11,7 +11,7 @@ export function PersonTabs({ current, basePath }: { current: PayerId; basePath: 
   function navigate(payer: PayerId) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("payer", payer);
-    router.push(`${basePath}?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
   }
 
   return (

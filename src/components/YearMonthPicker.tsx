@@ -28,7 +28,7 @@ export function YearMonthPicker({
     const params = new URLSearchParams(searchParams.toString());
     params.set(yearParam, String(nextYear));
     params.set(monthParam, String(nextMonth).padStart(2, "0"));
-    router.push(`${basePath}?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`, { scroll: false });
   }
 
   return (
