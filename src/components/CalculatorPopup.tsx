@@ -1,0 +1,102 @@
+"use client";
+
+import { useState } from "react";
+import clsx from "clsx";
+import { evaluateExpression } from "@/lib/calculator";
+
+interface Props {
+  title: string;
+  onInput: (value: number) => void;
+  onClose: () => void;
+}
+
+const BUTTON_ROWS: string[][] = [
+  ["7", "8", "9", "÷"],
+  ["4", "5", "6", "×"],
+  ["1", "2", "3", "−"],
+  ["0", ".", "C", "+"],
+];
+
+function toEvaluable(expression: string) {
+  return expression.replace(/×/g, "*").replace(/÷/g, "/").replace(/−/g, "-");
+}
+
+export function CalculatorPopup({ title, onInput, onClose }: Props) {
+  const [expression, setExpression] = useState("");
+
+  const result = evaluateExpression(toEvaluable(expression) || "0");
+
+  function press(key: string) {
+    if (key === "C") {
+      setExpression("");
+      return;
+    }
+    setExpression((prev) => prev + key);
+  }
+
+  function backspace() {
+    setExpression((prev) => prev.slice(0, -1));
+  }
+
+  function confirm() {
+    if (result === null) return;
+    onInput(result);
+    onClose();
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
+      onClick={onClose}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-72 rounded-lg bg-white p-4 shadow-xl dark:bg-neutral-900"
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="text-sm font-medium">{title}の電卓</h3>
+          <button type="button" onClick={onClose} className="text-neutral-400 hover:text-neutral-600">
+            ✕
+          </button>
+        </div>
+
+        <div className="mb-3 rounded-md border border-neutral-300 bg-neutral-50 px-3 py-2 text-right dark:border-neutral-700 dark:bg-neutral-800">
+          <div className="min-h-[1.25rem] text-sm text-neutral-500 dark:text-neutral-400">
+            {expression || "0"}
+          </div>
+          <div className={clsx("text-xl font-semibold", result === null && "text-red-500")}>
+            {result === null ? "エラー" : `¥${result.toLocaleString("ja-JP")}`}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-2">
+          {BUTTON_ROWS.flat().map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => press(key)}
+              className="rounded-md bg-neutral-100 py-2 text-lg hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+            >
+              {key}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={backspace}
+            className="col-span-2 rounded-md bg-neutral-100 py-2 text-sm hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+          >
+            ⌫ 1文字削除
+          </button>
+          <button
+            type="button"
+            onClick={confirm}
+            disabled={result === null}
+            className="col-span-2 rounded-md bg-teal-600 py-2 font-medium text-white hover:bg-teal-700 disabled:cursor-not-allowed disabled:bg-neutral-300 dark:disabled:bg-neutral-700"
+          >
+            入力
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

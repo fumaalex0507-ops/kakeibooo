@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { evaluateExpression } from "@/lib/calculator";
+import { CalculatorPopup } from "@/components/CalculatorPopup";
 import { PAYERS, type Category } from "@/lib/types";
 
 interface Props {
@@ -21,20 +22,20 @@ export function TransactionForm({ categories }: Props) {
   const [totalAmount, setTotalAmount] = useState("");
   const [ownShare, setOwnShare] = useState("0");
   const [otherShare, setOtherShare] = useState("0");
+  const [activeCalculator, setActiveCalculator] = useState<"own" | "other" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
 
-  const totalResult = evaluateExpression(totalAmount);
   const ownResult = evaluateExpression(ownShare);
   const otherResult = evaluateExpression(otherShare);
 
-  const total = totalResult ?? 0;
+  const total = Number(totalAmount) || 0;
   const own = ownResult ?? 0;
   const other = otherResult ?? 0;
   const splitAmount = total - (own + other);
 
-  const hasInvalidExpression = totalResult === null || ownResult === null || otherResult === null;
+  const hasInvalidExpression = ownResult === null || otherResult === null;
   const isNegativeSplit = splitAmount < 0;
   const isTotalMissing = total <= 0;
   const canSubmit = !isNegativeSplit && !isTotalMissing && !hasInvalidExpression && !submitting;
@@ -134,25 +135,30 @@ export function TransactionForm({ categories }: Props) {
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium">支払い総額</label>
         <input
-          type="text"
-          inputMode="decimal"
+          type="number"
+          inputMode="numeric"
+          min={0}
           value={totalAmount}
           onChange={(e) => setTotalAmount(e.target.value)}
-          onBlur={() => resolveOnBlur(totalAmount, setTotalAmount)}
-          className={clsx(
-            "rounded-md border px-3 py-2 dark:bg-neutral-900",
-            totalResult === null
-              ? "border-red-400 dark:border-red-700"
-              : "border-neutral-300 dark:border-neutral-700"
-          )}
-          placeholder="0 または 500+300 のように計算式も入力できます"
+          className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
+          placeholder="0"
           required
         />
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">自己負担</label>
+          <label className="flex items-center gap-1.5 text-sm font-medium">
+            自己負担
+            <button
+              type="button"
+              onClick={() => setActiveCalculator("own")}
+              aria-label="自己負担を電卓で計算"
+              className="text-base leading-none"
+            >
+              🧮
+            </button>
+          </label>
           <input
             type="text"
             inputMode="decimal"
@@ -168,7 +174,17 @@ export function TransactionForm({ categories }: Props) {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">相手立替</label>
+          <label className="flex items-center gap-1.5 text-sm font-medium">
+            相手立替
+            <button
+              type="button"
+              onClick={() => setActiveCalculator("other")}
+              aria-label="相手立替を電卓で計算"
+              className="text-base leading-none"
+            >
+              🧮
+            </button>
+          </label>
           <input
             type="text"
             inputMode="decimal"
@@ -221,6 +237,21 @@ export function TransactionForm({ categories }: Props) {
       >
         {submitting ? "保存中..." : "保存"}
       </button>
+
+      {activeCalculator === "own" && (
+        <CalculatorPopup
+          title="自己負担"
+          onInput={(value) => setOwnShare(String(value))}
+          onClose={() => setActiveCalculator(null)}
+        />
+      )}
+      {activeCalculator === "other" && (
+        <CalculatorPopup
+          title="相手立替"
+          onInput={(value) => setOtherShare(String(value))}
+          onClose={() => setActiveCalculator(null)}
+        />
+      )}
     </form>
   );
 }
