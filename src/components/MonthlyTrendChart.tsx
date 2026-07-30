@@ -24,7 +24,21 @@ export function MonthlyTrendChart({ data, categories, selectedCategoryId }: Prop
         <XAxis dataKey="year_month" tick={{ fontSize: 12 }} />
         <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`} />
         <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
-        <Legend />
+        <Legend
+          content={() => (
+            <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-2 text-xs">
+              {barCategories.map((c) => (
+                <li key={c.id} className="flex items-center gap-1.5">
+                  <span
+                    className="inline-block h-2.5 w-2.5 rounded-sm"
+                    style={{ backgroundColor: colorForCategory(c.id, categories) }}
+                  />
+                  {c.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        />
         {barCategories.map((c) => (
           <Bar key={c.id} dataKey={c.id} name={c.name} stackId="a" fill={colorForCategory(c.id, categories)} />
         ))}
