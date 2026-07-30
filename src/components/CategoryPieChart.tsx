@@ -1,14 +1,8 @@
 "use client";
 
-import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { colorForCategory } from "@/lib/colors";
 import type { Category } from "@/lib/types";
-
-// Shared anchor so the absolutely-positioned total-amount overlay lines up
-// exactly with the donut's actual center, regardless of how much vertical
-// space the legend below it consumes.
-const CENTER_X = "50%";
-const CENTER_Y = "42%";
 
 interface Props {
   categories: Category[];
@@ -27,64 +21,54 @@ export function CategoryPieChart({ categories, categoryTotals }: Props) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="relative">
-      <ResponsiveContainer width="100%" height={280}>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="value"
-            nameKey="name"
-            cx={CENTER_X}
-            cy={CENTER_Y}
-            innerRadius={60}
-            outerRadius={100}
-            paddingAngle={1}
-          >
-            {data.map((d) => (
-              <Cell key={d.id} fill={colorForCategory(d.id, categories)} />
-            ))}
-          </Pie>
-          <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
-          <Legend
-            content={() => (
-              <ul
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                  gap: "4px 16px",
-                  paddingTop: 8,
-                  fontSize: 12,
-                  listStyle: "none",
-                }}
-              >
-                {data.map((d) => (
-                  <li key={d.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span
-                      style={{
-                        display: "inline-block",
-                        flexShrink: 0,
-                        width: 10,
-                        height: 10,
-                        borderRadius: 2,
-                        backgroundColor: colorForCategory(d.id, categories),
-                      }}
-                    />
-                    {d.name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          />
-        </PieChart>
-      </ResponsiveContainer>
-      <div
-        className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center"
-        style={{ left: CENTER_X, top: CENTER_Y }}
-      >
-        <span className="text-xs text-neutral-500 dark:text-neutral-400">合計</span>
-        <span className="text-lg font-semibold">¥{total.toLocaleString("ja-JP")}</span>
+    <div>
+      {/* Legend rendered outside the chart (not as a Recharts <Legend>) so its
+          height never affects the Pie's own plotting area — otherwise the
+          center overlay below, anchored to this block only, would drift out
+          of sync with wherever Recharts actually centers the donut. */}
+      <div className="relative">
+        <ResponsiveContainer width="100%" height={240}>
+          <PieChart>
+            <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={1}>
+              {data.map((d) => (
+                <Cell key={d.id} fill={colorForCategory(d.id, categories)} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
+          </PieChart>
+        </ResponsiveContainer>
+        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">合計</span>
+          <span className="text-lg font-semibold">¥{total.toLocaleString("ja-JP")}</span>
+        </div>
       </div>
+      <ul
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "4px 16px",
+          paddingTop: 8,
+          fontSize: 12,
+          listStyle: "none",
+        }}
+      >
+        {data.map((d) => (
+          <li key={d.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span
+              style={{
+                display: "inline-block",
+                flexShrink: 0,
+                width: 10,
+                height: 10,
+                borderRadius: 2,
+                backgroundColor: colorForCategory(d.id, categories),
+              }}
+            />
+            {d.name}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
