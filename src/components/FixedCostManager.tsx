@@ -3,25 +3,234 @@
 import { useState } from "react";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
-import { PAYERS, type Category, type FixedCost } from "@/lib/types";
+import { PAYERS, type Category, type FixedCost, type PayerId } from "@/lib/types";
 
 interface Props {
   categories: Category[];
   initialFixedCosts: FixedCost[];
 }
 
-export function FixedCostManager({ categories, initialFixedCosts }: Props) {
-  const [fixedCosts, setFixedCosts] = useState(initialFixedCosts);
-  const [title, setTitle] = useState("");
-  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
-  const [payerId, setPayerId] = useState(PAYERS[0]);
-  const [totalAmount, setTotalAmount] = useState("");
-  const [ownShare, setOwnShare] = useState("0");
-  const [otherShare, setOtherShare] = useState("0");
-  const [dayOfMonth, setDayOfMonth] = useState("1");
+interface FixedCostFieldsValue {
+  title: string;
+  categoryId: string;
+  payerId: PayerId;
+  totalAmount: string;
+  ownShare: string;
+  otherShare: string;
+  dayOfMonth: string;
+}
+
+function fixedCostToFields(fc: FixedCost): FixedCostFieldsValue {
+  return {
+    title: fc.title,
+    categoryId: fc.category_id,
+    payerId: fc.payer_id,
+    totalAmount: String(fc.total_amount),
+    ownShare: String(fc.own_share),
+    otherShare: String(fc.other_share),
+    dayOfMonth: String(fc.day_of_month),
+  };
+}
+
+function FixedCostFields({
+  categories,
+  value,
+  onChange,
+}: {
+  categories: Category[];
+  value: FixedCostFieldsValue;
+  onChange: (value: FixedCostFieldsValue) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3">
+      <input
+        value={value.title}
+        onChange={(e) => onChange({ ...value, title: e.target.value })}
+        placeholder="項目名（例: 家賃）"
+        className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        required
+      />
+      <div className="grid grid-cols-2 gap-3">
+        <select
+          value={value.categoryId}
+          onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        >
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={value.payerId}
+          onChange={(e) => onChange({ ...value, payerId: e.target.value as PayerId })}
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        >
+          {PAYERS.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <input
+          type="number"
+          inputMode="numeric"
+          value={value.totalAmount}
+          onChange={(e) => onChange({ ...value, totalAmount: e.target.value })}
+          placeholder="総額"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          required
+        />
+        <input
+          type="number"
+          inputMode="numeric"
+          value={value.ownShare}
+          onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
+          placeholder="自己負担"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        />
+        <input
+          type="number"
+          inputMode="numeric"
+          value={value.otherShare}
+          onChange={(e) => onChange({ ...value, otherShare: e.target.value })}
+          placeholder="相手立替"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        発生日（毎月）
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={28}
+          value={value.dayOfMonth}
+          onChange={(e) => onChange({ ...value, dayOfMonth: e.target.value })}
+          className="w-20 rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+        />
+        日
+      </label>
+    </div>
+  );
+}
+
+function FixedCostRow({
+  fc,
+  categories,
+  onToggleActive,
+  onDelete,
+  onSave,
+}: {
+  fc: FixedCost;
+  categories: Category[];
+  onToggleActive: (fc: FixedCost) => void;
+  onDelete: (fc: FixedCost) => void;
+  onSave: (fc: FixedCost, fields: FixedCostFieldsValue) => Promise<string | null>;
+}) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [fields, setFields] = useState<FixedCostFieldsValue>(() => fixedCostToFields(fc));
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const categoryName = (id: string) => categories.find((c) => c.id === id)?.name ?? id;
+
+  function startEditing() {
+    setFields(fixedCostToFields(fc));
+    setError(null);
+    setIsEditing(true);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    setError(null);
+    const err = await onSave(fc, fields);
+    setSaving(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setIsEditing(false);
+  }
+
+  if (isEditing) {
+    return (
+      <div className="flex flex-col gap-3 rounded-md border border-neutral-200 p-3 dark:border-neutral-800">
+        <FixedCostFields categories={categories} value={fields} onChange={setFields} />
+        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-md bg-teal-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-teal-700 disabled:opacity-50"
+          >
+            {saving ? "保存中..." : "保存"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEditing(false)}
+            className="rounded-md border border-neutral-300 px-3 py-1.5 text-sm dark:border-neutral-700"
+          >
+            キャンセル
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
+      <div>
+        <span className="font-medium">{fc.title}</span>{" "}
+        <span className="text-neutral-500 dark:text-neutral-400">
+          （{categoryName(fc.category_id)}・{fc.payer_id}・毎月{fc.day_of_month}日・¥
+          {fc.total_amount.toLocaleString("ja-JP")}）
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => onToggleActive(fc)}
+          className={clsx(
+            "rounded-full px-2 py-0.5 text-xs",
+            fc.active
+              ? "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
+              : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+          )}
+        >
+          {fc.active ? "有効" : "停止中"}
+        </button>
+        <button type="button" onClick={startEditing} className="text-xs text-neutral-600 hover:underline dark:text-neutral-300">
+          編集
+        </button>
+        <button
+          type="button"
+          onClick={() => onDelete(fc)}
+          className="text-xs text-red-600 hover:underline dark:text-red-400"
+        >
+          削除
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export function FixedCostManager({ categories, initialFixedCosts }: Props) {
+  const [fixedCosts, setFixedCosts] = useState(initialFixedCosts);
+  const [newFields, setNewFields] = useState<FixedCostFieldsValue>({
+    title: "",
+    categoryId: categories[0]?.id ?? "",
+    payerId: PAYERS[0],
+    totalAmount: "",
+    ownShare: "0",
+    otherShare: "0",
+    dayOfMonth: "1",
+  });
+  const [error, setError] = useState<string | null>(null);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -30,13 +239,13 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
     const { data, error } = await supabase
       .from("fixed_costs")
       .insert({
-        title,
-        category_id: categoryId,
-        payer_id: payerId,
-        total_amount: Number(totalAmount) || 0,
-        own_share: Number(ownShare) || 0,
-        other_share: Number(otherShare) || 0,
-        day_of_month: Number(dayOfMonth) || 1,
+        title: newFields.title,
+        category_id: newFields.categoryId,
+        payer_id: newFields.payerId,
+        total_amount: Number(newFields.totalAmount) || 0,
+        own_share: Number(newFields.ownShare) || 0,
+        other_share: Number(newFields.otherShare) || 0,
+        day_of_month: Number(newFields.dayOfMonth) || 1,
       })
       .select()
       .single();
@@ -47,11 +256,15 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
     }
 
     setFixedCosts((prev) => [...prev, data as FixedCost]);
-    setTitle("");
-    setTotalAmount("");
-    setOwnShare("0");
-    setOtherShare("0");
-    setDayOfMonth("1");
+    setNewFields({
+      title: "",
+      categoryId: categories[0]?.id ?? "",
+      payerId: PAYERS[0],
+      totalAmount: "",
+      ownShare: "0",
+      otherShare: "0",
+      dayOfMonth: "1",
+    });
   }
 
   async function toggleActive(fc: FixedCost) {
@@ -71,6 +284,29 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
     }
   }
 
+  async function saveEdit(fc: FixedCost, fields: FixedCostFieldsValue): Promise<string | null> {
+    const updates = {
+      title: fields.title,
+      category_id: fields.categoryId,
+      payer_id: fields.payerId,
+      total_amount: Number(fields.totalAmount) || 0,
+      own_share: Number(fields.ownShare) || 0,
+      other_share: Number(fields.otherShare) || 0,
+      day_of_month: Number(fields.dayOfMonth) || 1,
+    };
+    const { data, error } = await supabase
+      .from("fixed_costs")
+      .update(updates)
+      .eq("id", fc.id)
+      .select()
+      .single();
+
+    if (error) return error.message;
+
+    setFixedCosts((prev) => prev.map((f) => (f.id === fc.id ? (data as FixedCost) : f)));
+    return null;
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -78,115 +314,20 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
           <p className="text-sm text-neutral-500 dark:text-neutral-400">固定費はまだ登録されていません。</p>
         )}
         {fixedCosts.map((fc) => (
-          <div
+          <FixedCostRow
             key={fc.id}
-            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800"
-          >
-            <div>
-              <span className="font-medium">{fc.title}</span>{" "}
-              <span className="text-neutral-500 dark:text-neutral-400">
-                （{categoryName(fc.category_id)}・{fc.payer_id}・毎月{fc.day_of_month}日・¥
-                {fc.total_amount.toLocaleString("ja-JP")}）
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => toggleActive(fc)}
-                className={clsx(
-                  "rounded-full px-2 py-0.5 text-xs",
-                  fc.active
-                    ? "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-200"
-                    : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
-                )}
-              >
-                {fc.active ? "有効" : "停止中"}
-              </button>
-              <button
-                type="button"
-                onClick={() => remove(fc)}
-                className="text-xs text-red-600 hover:underline dark:text-red-400"
-              >
-                削除
-              </button>
-            </div>
-          </div>
+            fc={fc}
+            categories={categories}
+            onToggleActive={toggleActive}
+            onDelete={remove}
+            onSave={saveEdit}
+          />
         ))}
       </div>
 
       <form onSubmit={handleAdd} className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
         <h2 className="text-sm font-medium">固定費を追加</h2>
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="項目名（例: 家賃）"
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          required
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select
-            value={payerId}
-            onChange={(e) => setPayerId(e.target.value as (typeof PAYERS)[number])}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          >
-            {PAYERS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="grid grid-cols-3 gap-3">
-          <input
-            type="number"
-            inputMode="numeric"
-            value={totalAmount}
-            onChange={(e) => setTotalAmount(e.target.value)}
-            placeholder="総額"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-            required
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            value={ownShare}
-            onChange={(e) => setOwnShare(e.target.value)}
-            placeholder="自己負担"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          />
-          <input
-            type="number"
-            inputMode="numeric"
-            value={otherShare}
-            onChange={(e) => setOtherShare(e.target.value)}
-            placeholder="相手立替"
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          発生日（毎月）
-          <input
-            type="number"
-            inputMode="numeric"
-            min={1}
-            max={28}
-            value={dayOfMonth}
-            onChange={(e) => setDayOfMonth(e.target.value)}
-            className="w-20 rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          />
-          日
-        </label>
+        <FixedCostFields categories={categories} value={newFields} onChange={setNewFields} />
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <button type="submit" className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
           追加
