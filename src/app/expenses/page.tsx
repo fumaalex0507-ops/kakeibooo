@@ -18,6 +18,7 @@ import { BudgetEditor } from "@/components/BudgetEditor";
 import {
   BUDGET_HIDDEN_CATEGORY_IDS,
   PAYERS,
+  TREND_TAB_HIDDEN_CATEGORY_IDS,
   type Budget,
   type Category,
   type MonthlyTotalRow,
@@ -112,6 +113,9 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const budgetCategories = allCategories.filter(
     (c) => !BUDGET_HIDDEN_CATEGORY_IDS.includes(c.id as (typeof BUDGET_HIDDEN_CATEGORY_IDS)[number])
   );
+  const trendTabCategories = allCategories.filter(
+    (c) => !TREND_TAB_HIDDEN_CATEGORY_IDS.includes(c.id as (typeof TREND_TAB_HIDDEN_CATEGORY_IDS)[number])
+  );
 
   const effectiveBudgets = resolveEffectiveBudgets((allBudgets ?? []) as Budget[], budgetYearMonth);
 
@@ -201,7 +205,7 @@ export default async function ExpensesPage({ searchParams }: Props) {
           <PeriodPicker months={months} basePath="/expenses" />
         </div>
         <div className="mb-3">
-          <TrendCategoryTabs categories={allCategories} current={trendCategory} basePath="/expenses" />
+          <TrendCategoryTabs categories={trendTabCategories} current={trendCategory} basePath="/expenses" />
         </div>
         <MonthlyTrendChart data={trend} categories={allCategories} selectedCategoryId={trendCategory} />
       </section>

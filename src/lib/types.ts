@@ -22,6 +22,10 @@ export const BUDGET_HIDDEN_CATEGORY_IDS = [
   "other",
 ] as const;
 
+// Nobody wants to isolate these on the monthly trend chart specifically —
+// still included in the stacked "全体" view, just not offered as their own tab.
+export const TREND_TAB_HIDDEN_CATEGORY_IDS = ["rent", "investment", "other"] as const;
+
 export interface Category {
   id: string;
   name: string;
