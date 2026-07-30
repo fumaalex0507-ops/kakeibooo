@@ -44,6 +44,14 @@ export function CalculatorPopup({ title, onInput, onClose }: Props) {
     setExpression((prev) => prev.slice(0, -1));
   }
 
+  function equals() {
+    if (result === null) return;
+    // Collapse the expression into its result so further taps (e.g. ×2)
+    // apply to the running total instead of being folded into one long
+    // expression evaluated by operator precedence.
+    setExpression(String(result));
+  }
+
   function confirm() {
     if (result === null) return;
     onInput(result);
@@ -89,9 +97,17 @@ export function CalculatorPopup({ title, onInput, onClose }: Props) {
           <button
             type="button"
             onClick={backspace}
-            className="col-span-2 rounded-md bg-neutral-100 py-2 text-sm hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+            className="rounded-md bg-neutral-100 py-2 text-sm hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
           >
-            ⌫ 1文字削除
+            ⌫
+          </button>
+          <button
+            type="button"
+            onClick={equals}
+            disabled={result === null}
+            className="rounded-md bg-neutral-200 py-2 text-lg font-medium hover:bg-neutral-300 disabled:cursor-not-allowed disabled:bg-neutral-100 dark:bg-neutral-700 dark:hover:bg-neutral-600 dark:disabled:bg-neutral-800"
+          >
+            =
           </button>
           <button
             type="button"

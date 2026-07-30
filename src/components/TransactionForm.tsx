@@ -5,6 +5,7 @@ import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { evaluateExpression } from "@/lib/calculator";
 import { CalculatorPopup } from "@/components/CalculatorPopup";
+import { CalculatorIcon } from "@/components/icons/CalculatorIcon";
 import { PAYERS, type Category } from "@/lib/types";
 
 interface Props {
@@ -167,9 +168,9 @@ export function TransactionForm({ categories }: Props) {
               type="button"
               onClick={() => setActiveCalculator("own")}
               aria-label="自己負担を電卓で計算"
-              className="text-base leading-none"
+              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
             >
-              🧮
+              <CalculatorIcon className="h-4 w-4" />
             </button>
           </label>
           <input
@@ -195,9 +196,9 @@ export function TransactionForm({ categories }: Props) {
               type="button"
               onClick={() => setActiveCalculator("other")}
               aria-label="相手立替を電卓で計算"
-              className="text-base leading-none"
+              className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200"
             >
-              🧮
+              <CalculatorIcon className="h-4 w-4" />
             </button>
           </label>
           <input
