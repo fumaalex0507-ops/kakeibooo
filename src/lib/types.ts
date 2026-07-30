@@ -4,6 +4,11 @@ export const PAYERS: readonly PayerId[] = ["風馬", "ちか子"] as const;
 
 export const UTILITY_CATEGORY_IDS = ["electricity", "gas", "water"] as const;
 
+// These recur via fixed_costs and are auto-generated into transactions each
+// month, so they're excluded from the manual /input entry form's category
+// list (but still selectable on /fixed-costs).
+export const FIXED_COST_ONLY_CATEGORY_IDS = ["rent", "investment", "subscription"] as const;
+
 export interface Category {
   id: string;
   name: string;

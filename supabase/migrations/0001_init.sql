@@ -42,7 +42,9 @@ create table fixed_costs (
 create table transactions (
   id uuid primary key default gen_random_uuid(),
   date date not null,
-  year_month text generated always as (to_char(date, 'YYYY-MM')) stored,
+  year_month text generated always as (
+    lpad(extract(year from date)::text, 4, '0') || '-' || lpad(extract(month from date)::text, 2, '0')
+  ) stored,
   payer_id text not null check (payer_id in ('風馬','ちか子')),
   category_id text not null references categories(id),
   total_amount integer not null check (total_amount >= 0),
