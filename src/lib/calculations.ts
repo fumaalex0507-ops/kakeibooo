@@ -45,25 +45,25 @@ export function utilityStatus(transactions: Transaction[]) {
   };
 }
 
-export interface MonthlyTrendPoint {
-  year_month: string;
-  total: number;
-}
+export type MonthlyCategoryPoint = { year_month: string } & Record<string, number>;
 
 /**
- * One point per month: total_amount summed for the given payer only (used
- * for the per-person trend chart on /expenses). Pass no payerId to combine
- * both payers.
+ * One point per month, with each category's total_amount as its own key —
+ * drives the stacked monthly trend bar chart (one Bar per category) so the
+ * composition within each month is visible, not just the combined total.
  */
-export function aggregateMonthlyTrend(rows: MonthlyTotalRow[], payerId?: PayerId): MonthlyTrendPoint[] {
-  const byMonth = new Map<string, number>();
+export function aggregateMonthlyTrendByCategory(
+  rows: MonthlyTotalRow[],
+  payerId: PayerId
+): MonthlyCategoryPoint[] {
+  const byMonth = new Map<string, MonthlyCategoryPoint>();
   for (const r of rows) {
-    if (payerId && r.payer_id !== payerId) continue;
-    byMonth.set(r.year_month, (byMonth.get(r.year_month) ?? 0) + r.total_amount);
+    if (r.payer_id !== payerId) continue;
+    const point = byMonth.get(r.year_month) ?? ({ year_month: r.year_month } as MonthlyCategoryPoint);
+    point[r.category_id] = (point[r.category_id] ?? 0) + r.total_amount;
+    byMonth.set(r.year_month, point);
   }
-  return [...byMonth.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([year_month, total]) => ({ year_month, total }));
+  return [...byMonth.values()].sort((a, b) => a.year_month.localeCompare(b.year_month));
 }
 
 /** Total per category for a single month, scoped to one payer — drives per-person budget progress. */

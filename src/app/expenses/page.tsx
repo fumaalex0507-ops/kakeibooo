@@ -3,11 +3,12 @@ import { createServerClient } from "@/lib/supabase/server";
 import {
   aggregateCategoryTotalsForMonth,
   aggregateCumulativeDailySpendByCategory,
-  aggregateMonthlyTrend,
+  aggregateMonthlyTrendByCategory,
   resolveEffectiveBudgets,
 } from "@/lib/calculations";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { PersonTabs } from "@/components/PersonTabs";
+import { TrendCategoryTabs } from "@/components/TrendCategoryTabs";
 import { YearMonthPicker } from "@/components/YearMonthPicker";
 import { MonthlyTrendChart } from "@/components/MonthlyTrendChart";
 import { CategoryPieChart } from "@/components/CategoryPieChart";
@@ -31,6 +32,7 @@ interface Props {
     pieMonth?: string;
     budgetYear?: string;
     budgetMonth?: string;
+    trendCategory?: string;
   }>;
 }
 
@@ -50,6 +52,8 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const budgetYear = Number(params.budgetYear) || now.getFullYear();
   const budgetMonth = Number(params.budgetMonth) || now.getMonth() + 1;
   const budgetYearMonth = `${budgetYear}-${String(budgetMonth).padStart(2, "0")}`;
+
+  const trendCategory = params.trendCategory;
 
   const supabase = createServerClient();
 
@@ -92,7 +96,7 @@ export default async function ExpensesPage({ searchParams }: Props) {
   }
 
   const rows = (monthlyTotals ?? []) as MonthlyTotalRow[];
-  const trend = aggregateMonthlyTrend(rows, payerId);
+  const trend = aggregateMonthlyTrendByCategory(rows, payerId);
   const pieCategoryTotals = aggregateCategoryTotalsForMonth(
     (pieTotals ?? []) as MonthlyTotalRow[],
     pieYearMonth,
@@ -116,8 +120,6 @@ export default async function ExpensesPage({ searchParams }: Props) {
   // shouldn't count toward the budget line or get its own line in the chart.
   const budgetedCategories = budgetCategories.filter((c) => effectiveBudgets[c.id] !== undefined);
   const budgetedCategoryIds = new Set(budgetedCategories.map((c) => c.id));
-
-  const totalBudgetLine = budgetedCategories.reduce((sum, c) => sum + effectiveBudgets[c.id], 0);
 
   const budgetedTransactions = (budgetMonthTransactions ?? []).filter((t) =>
     budgetedCategoryIds.has(t.category_id)
@@ -155,7 +157,7 @@ export default async function ExpensesPage({ searchParams }: Props) {
             data={cumulativeSpend}
             categories={budgetedCategories}
             allCategories={allCategories}
-            budgetLine={totalBudgetLine}
+            budgetAmounts={effectiveBudgets}
           />
         </div>
 
@@ -198,7 +200,10 @@ export default async function ExpensesPage({ searchParams }: Props) {
           </h2>
           <PeriodPicker months={months} basePath="/expenses" />
         </div>
-        <MonthlyTrendChart data={trend} />
+        <div className="mb-3">
+          <TrendCategoryTabs categories={allCategories} current={trendCategory} basePath="/expenses" />
+        </div>
+        <MonthlyTrendChart data={trend} categories={allCategories} selectedCategoryId={trendCategory} />
       </section>
     </div>
   );

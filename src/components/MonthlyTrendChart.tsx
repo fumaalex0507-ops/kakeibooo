@@ -1,17 +1,33 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { MonthlyTrendPoint } from "@/lib/calculations";
+import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { colorForCategory } from "@/lib/colors";
+import type { Category } from "@/lib/types";
+import type { MonthlyCategoryPoint } from "@/lib/calculations";
 
-export function MonthlyTrendChart({ data }: { data: MonthlyTrendPoint[] }) {
+interface Props {
+  data: MonthlyCategoryPoint[];
+  categories: Category[];
+  /** Category id to isolate; omit/undefined shows every category stacked. */
+  selectedCategoryId?: string;
+}
+
+export function MonthlyTrendChart({ data, categories, selectedCategoryId }: Props) {
+  const barCategories = selectedCategoryId
+    ? categories.filter((c) => c.id === selectedCategoryId)
+    : categories;
+
   return (
-    <ResponsiveContainer width="100%" height={260}>
+    <ResponsiveContainer width="100%" height={280}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 8 }}>
         <CartesianGrid strokeDasharray="3 3" className="stroke-neutral-200 dark:stroke-neutral-800" />
         <XAxis dataKey="year_month" tick={{ fontSize: 12 }} />
         <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `¥${(v / 1000).toFixed(0)}k`} />
         <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
-        <Bar dataKey="total" fill="#0d9488" radius={[4, 4, 0, 0]} name="支出合計" />
+        <Legend />
+        {barCategories.map((c) => (
+          <Bar key={c.id} dataKey={c.id} name={c.name} stackId="a" fill={colorForCategory(c.id, categories)} />
+        ))}
       </BarChart>
     </ResponsiveContainer>
   );
