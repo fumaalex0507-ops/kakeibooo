@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { CurrentUserProvider } from "@/hooks/useCurrentUser";
 import { AppInit } from "@/components/AppInit";
 import { NavHeader } from "@/components/NavHeader";
 
@@ -45,11 +44,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <CurrentUserProvider>
-          <AppInit />
-          <NavHeader />
-          <main className="flex-1 p-4">{children}</main>
-        </CurrentUserProvider>
+        <AppInit />
+        <NavHeader />
+        <main className="flex-1 p-4">{children}</main>
       </body>
     </html>
   );

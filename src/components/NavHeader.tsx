@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
-import { UserSwitcher } from "./UserSwitcher";
 
 const LINKS = [
   { href: "/input", label: "入力" },
@@ -16,7 +15,7 @@ export function NavHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+    <header className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
       <nav className="flex gap-1">
         {LINKS.map((link) => (
           <Link
@@ -33,7 +32,6 @@ export function NavHeader() {
           </Link>
         ))}
       </nav>
-      <UserSwitcher />
     </header>
   );
 }

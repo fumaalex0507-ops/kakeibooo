@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
-import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { PAYERS, type Category } from "@/lib/types";
 
 interface Props {
@@ -15,10 +14,8 @@ function todayIso() {
 }
 
 export function TransactionForm({ categories }: Props) {
-  const { currentUser } = useCurrentUser();
-
   const [date, setDate] = useState(todayIso());
-  const [payerId, setPayerId] = useState(currentUser);
+  const [payerId, setPayerId] = useState(PAYERS[0]);
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [totalAmount, setTotalAmount] = useState("");
   const [ownShare, setOwnShare] = useState("0");
