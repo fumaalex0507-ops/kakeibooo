@@ -1,4 +1,4 @@
-import type { MonthlyTotalRow, PayerId, Transaction } from "./types";
+import type { Budget, MonthlyTotalRow, PayerId, Transaction } from "./types";
 
 export interface SettlementResult {
   /** Total amount each person fronted (sum of total_amount), for display context */
@@ -78,4 +78,53 @@ export function aggregateCategoryTotalsForMonth(
     totals[r.category_id] = (totals[r.category_id] ?? 0) + r.total_amount;
   }
   return totals;
+}
+
+/**
+ * Budgets are set per (category, payer, month), but a month with no
+ * explicit row should carry forward the most recent prior month's amount
+ * rather than showing zero — so for each category, pick the row with the
+ * latest year_month that is <= targetYearMonth out of all of that payer's
+ * budget rows (caller is expected to have already filtered to one payer).
+ */
+export function resolveEffectiveBudgets(rows: Budget[], targetYearMonth: string): Record<string, number> {
+  const best: Record<string, { year_month: string; amount: number }> = {};
+  for (const r of rows) {
+    if (r.year_month > targetYearMonth) continue;
+    const current = best[r.category_id];
+    if (!current || r.year_month > current.year_month) {
+      best[r.category_id] = { year_month: r.year_month, amount: r.monthly_amount };
+    }
+  }
+  const result: Record<string, number> = {};
+  for (const [categoryId, v] of Object.entries(best)) result[categoryId] = v.amount;
+  return result;
+}
+
+export interface CumulativeSpendPoint {
+  day: number;
+  cumulative: number;
+}
+
+/** Running daily total across the given month's transactions, for the budget burn-up chart. */
+export function aggregateCumulativeDailySpend(
+  transactions: { date: string; total_amount: number }[],
+  yearMonth: string
+): CumulativeSpendPoint[] {
+  const [year, month] = yearMonth.split("-").map(Number);
+  const lastDay = new Date(year, month, 0).getDate();
+
+  const dailyTotals = new Array<number>(lastDay + 1).fill(0);
+  for (const t of transactions) {
+    const day = Number(t.date.split("-")[2]);
+    if (day >= 1 && day <= lastDay) dailyTotals[day] += t.total_amount;
+  }
+
+  const points: CumulativeSpendPoint[] = [];
+  let running = 0;
+  for (let day = 1; day <= lastDay; day++) {
+    running += dailyTotals[day];
+    points.push({ day, cumulative: running });
+  }
+  return points;
 }

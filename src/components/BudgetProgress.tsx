@@ -1,9 +1,9 @@
 import clsx from "clsx";
-import type { Budget, Category } from "@/lib/types";
+import type { Category } from "@/lib/types";
 
 interface Props {
   categories: Category[];
-  budgets: Budget[];
+  budgetAmounts: Record<string, number>;
   categoryTotals: Record<string, number>;
 }
 
@@ -13,15 +13,15 @@ function statusFor(ratio: number) {
   return { label: "順調", classes: "bg-teal-600", text: "text-teal-700 dark:text-teal-400" };
 }
 
-export function BudgetProgress({ categories, budgets, categoryTotals }: Props) {
-  const rows = budgets
-    .map((b) => {
-      const category = categories.find((c) => c.id === b.category_id);
-      const used = categoryTotals[b.category_id] ?? 0;
-      const ratio = b.monthly_amount > 0 ? used / b.monthly_amount : 0;
-      return { category, budget: b, used, ratio };
-    })
-    .filter((r) => r.category);
+export function BudgetProgress({ categories, budgetAmounts, categoryTotals }: Props) {
+  const rows = categories
+    .filter((c) => (budgetAmounts[c.id] ?? 0) > 0)
+    .map((category) => {
+      const monthlyAmount = budgetAmounts[category.id];
+      const used = categoryTotals[category.id] ?? 0;
+      const ratio = used / monthlyAmount;
+      return { category, monthlyAmount, used, ratio };
+    });
 
   if (rows.length === 0) {
     return (
@@ -33,13 +33,13 @@ export function BudgetProgress({ categories, budgets, categoryTotals }: Props) {
 
   return (
     <div className="flex flex-col gap-3">
-      {rows.map(({ category, budget, used, ratio }) => {
+      {rows.map(({ category, monthlyAmount, used, ratio }) => {
         const status = statusFor(ratio);
-        const remaining = budget.monthly_amount - used;
+        const remaining = monthlyAmount - used;
         return (
-          <div key={budget.category_id}>
+          <div key={category.id}>
             <div className="mb-1 flex items-center justify-between text-sm">
-              <span className="font-medium">{category!.name}</span>
+              <span className="font-medium">{category.name}</span>
               <span className={clsx("font-medium", status.text)}>{status.label}</span>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-800">
@@ -49,9 +49,8 @@ export function BudgetProgress({ categories, budgets, categoryTotals }: Props) {
               />
             </div>
             <div className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              ¥{used.toLocaleString("ja-JP")} / ¥{budget.monthly_amount.toLocaleString("ja-JP")}
-              {" "}
-              (残り¥{remaining.toLocaleString("ja-JP")})
+              ¥{used.toLocaleString("ja-JP")} / ¥{monthlyAmount.toLocaleString("ja-JP")} (残り¥
+              {remaining.toLocaleString("ja-JP")})
             </div>
           </div>
         );
