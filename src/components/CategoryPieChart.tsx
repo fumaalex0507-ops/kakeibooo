@@ -45,7 +45,37 @@ export function CategoryPieChart({ categories, categoryTotals }: Props) {
             ))}
           </Pie>
           <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
-          <Legend />
+          <Legend
+            content={() => (
+              <ul
+                style={{
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  gap: "4px 16px",
+                  paddingTop: 8,
+                  fontSize: 12,
+                  listStyle: "none",
+                }}
+              >
+                {data.map((d) => (
+                  <li key={d.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        flexShrink: 0,
+                        width: 10,
+                        height: 10,
+                        borderRadius: 2,
+                        backgroundColor: colorForCategory(d.id, categories),
+                      }}
+                    />
+                    {d.name}
+                  </li>
+                ))}
+              </ul>
+            )}
+          />
         </PieChart>
       </ResponsiveContainer>
       <div

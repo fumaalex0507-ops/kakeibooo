@@ -65,7 +65,37 @@ export function CumulativeSpendChart({ data, categories, allCategories, budgetAm
           labelFormatter={(d) => `${d}日`}
           formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`}
         />
-        <Legend />
+        <Legend
+          content={() => (
+            <ul
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: "4px 16px",
+                paddingTop: 8,
+                fontSize: 12,
+                listStyle: "none",
+              }}
+            >
+              {categories.map((c) => (
+                <li key={c.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <span
+                    style={{
+                      display: "inline-block",
+                      flexShrink: 0,
+                      width: 10,
+                      height: 10,
+                      borderRadius: 2,
+                      backgroundColor: colorForCategory(c.id, allCategories),
+                    }}
+                  />
+                  {c.name}
+                </li>
+              ))}
+            </ul>
+          )}
+        />
         {categories.map((c) => {
           const color = colorForCategory(c.id, allCategories);
           const budget = budgetAmounts[c.id] ?? 0;
