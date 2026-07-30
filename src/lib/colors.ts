@@ -1,4 +1,4 @@
-import type { Category } from "./types";
+import { PAYERS, type Category, type PayerId } from "./types";
 
 // Fixed categorical palette, assigned by each category's position in the
 // FULL category list (sorted by sort_order) — not by position within
@@ -23,4 +23,13 @@ const PALETTE = [
 export function colorForCategory(categoryId: string, allCategories: Category[]): string {
   const index = allCategories.findIndex((c) => c.id === categoryId);
   return PALETTE[(index < 0 ? 0 : index) % PALETTE.length];
+}
+
+// Fixed per-payer colors (not palette-indexed like categories, since there
+// are only ever two payers and they should stay visually distinct/stable).
+const PAYER_PALETTE = ["#2563eb", "#db2777"]; // blue, pink
+
+export function colorForPayer(payerId: PayerId): string {
+  const index = PAYERS.indexOf(payerId);
+  return PAYER_PALETTE[index < 0 ? 0 : index % PAYER_PALETTE.length];
 }

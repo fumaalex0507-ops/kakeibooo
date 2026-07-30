@@ -3,6 +3,7 @@
 import { useState } from "react";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
+import { colorForCategory, colorForPayer } from "@/lib/colors";
 import { PAYERS, type Category, type FixedCost, type PayerId } from "@/lib/types";
 
 interface Props {
@@ -198,11 +199,24 @@ function FixedCostRow({
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
-      <div>
-        <span className="font-medium">{fc.title}</span>{" "}
-        <span className="text-neutral-500 dark:text-neutral-400">
-          （{categoryName(fc.category_id)}・{fc.payer_id}・毎月{fc.day_of_month}日・¥
-          {fc.total_amount.toLocaleString("ja-JP")}）
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+          style={{ backgroundColor: colorForPayer(fc.payer_id) }}
+        >
+          {fc.payer_id}
+        </span>
+        <span
+          className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+          style={{ backgroundColor: colorForCategory(fc.category_id, categories) }}
+        >
+          {categoryName(fc.category_id)}
+        </span>
+        <span>
+          <span className="font-medium">{fc.title}</span>{" "}
+          <span className="text-neutral-500 dark:text-neutral-400">
+            （毎月{fc.day_of_month}日・¥{fc.total_amount.toLocaleString("ja-JP")}）
+          </span>
         </span>
       </div>
       <div className="ml-auto flex items-center gap-2">
