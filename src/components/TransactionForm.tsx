@@ -134,7 +134,7 @@ export function TransactionForm({ categories }: Props) {
 
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">自分独自負担額</label>
+          <label className="text-sm font-medium">自己負担</label>
           <input
             type="number"
             inputMode="numeric"
@@ -145,7 +145,7 @@ export function TransactionForm({ categories }: Props) {
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">相手独自負担額</label>
+          <label className="text-sm font-medium">相手立替</label>
           <input
             type="number"
             inputMode="numeric"
@@ -168,7 +168,7 @@ export function TransactionForm({ categories }: Props) {
         折半額: <span className="font-semibold">¥{splitDisplay}</span>
         {isNegativeSplit && (
           <p className="mt-1">
-            折半額がマイナスです。自分独自負担額と相手独自負担額の合計が支払い総額を超えています。
+            折半額がマイナスです。自己負担と相手立替の合計が支払い総額を超えています。
           </p>
         )}
       </div>

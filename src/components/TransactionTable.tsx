@@ -22,7 +22,7 @@ export function TransactionTable({ transactions, categories }: Props) {
             <th className="py-2 pr-4">分類</th>
             <th className="py-2 pr-4 text-right">総額</th>
             <th className="py-2 pr-4 text-right">自己負担</th>
-            <th className="py-2 pr-4 text-right">相手負担</th>
+            <th className="py-2 pr-4 text-right">相手立替</th>
             <th className="py-2 pr-4 text-right">折半額</th>
             <th className="py-2"></th>
           </tr>

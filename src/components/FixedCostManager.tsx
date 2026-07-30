@@ -162,7 +162,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
             inputMode="numeric"
             value={ownShare}
             onChange={(e) => setOwnShare(e.target.value)}
-            placeholder="自分独自負担額"
+            placeholder="自己負担"
             className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
           <input
@@ -170,7 +170,7 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
             inputMode="numeric"
             value={otherShare}
             onChange={(e) => setOtherShare(e.target.value)}
-            placeholder="相手独自負担額"
+            placeholder="相手立替"
             className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </div>
