@@ -79,8 +79,14 @@ export default async function ExpensesPage({ searchParams }: Props) {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-lg font-semibold">支出分析</h1>
-        <div className="flex flex-wrap items-center gap-3">
-          <PersonTabs current={payerId} basePath="/expenses" />
+        <PersonTabs current={payerId} basePath="/expenses" />
+      </div>
+
+      <section>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            {payerId}の分類構成比
+          </h2>
           <YearMonthPicker
             year={pieYear}
             month={pieMonth}
@@ -88,21 +94,17 @@ export default async function ExpensesPage({ searchParams }: Props) {
             yearParam="pieYear"
             monthParam="pieMonth"
           />
-          <PeriodPicker months={months} basePath="/expenses" />
         </div>
-      </div>
-
-      <section>
-        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          {payerId}の分類構成比
-        </h2>
         <CategoryPieChart categories={allCategories} categoryTotals={pieCategoryTotals} />
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          {payerId}の月次推移
-        </h2>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            {payerId}の月次推移
+          </h2>
+          <PeriodPicker months={months} basePath="/expenses" />
+        </div>
         <MonthlyTrendChart data={trend} />
       </section>
 
