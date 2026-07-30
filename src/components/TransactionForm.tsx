@@ -12,7 +12,14 @@ interface Props {
 }
 
 function todayIso() {
-  return new Date().toISOString().slice(0, 10);
+  // toISOString() converts to UTC, which would show yesterday's date for
+  // JST users between 0:00-8:59 local time — build the string from local
+  // getFullYear/Month/Date instead so it always matches the user's clock.
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
 export function TransactionForm({ categories }: Props) {
