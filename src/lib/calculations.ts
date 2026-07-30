@@ -50,10 +50,15 @@ export interface MonthlyTrendPoint {
   total: number;
 }
 
-/** One point per month: combined total_amount across both payers, for the trend chart. */
-export function aggregateMonthlyTrend(rows: MonthlyTotalRow[]): MonthlyTrendPoint[] {
+/**
+ * One point per month: total_amount summed for the given payer only (used
+ * for the per-person trend chart on /expenses). Pass no payerId to combine
+ * both payers.
+ */
+export function aggregateMonthlyTrend(rows: MonthlyTotalRow[], payerId?: PayerId): MonthlyTrendPoint[] {
   const byMonth = new Map<string, number>();
   for (const r of rows) {
+    if (payerId && r.payer_id !== payerId) continue;
     byMonth.set(r.year_month, (byMonth.get(r.year_month) ?? 0) + r.total_amount);
   }
   return [...byMonth.entries()]
@@ -61,31 +66,15 @@ export function aggregateMonthlyTrend(rows: MonthlyTotalRow[]): MonthlyTrendPoin
     .map(([year_month, total]) => ({ year_month, total }));
 }
 
-export interface PersonBreakdownPoint {
-  year_month: string;
-  風馬: number;
-  ちか子: number;
-}
-
-/** One point per month with each payer's total, for the grouped bar comparison. */
-export function aggregatePersonBreakdown(rows: MonthlyTotalRow[]): PersonBreakdownPoint[] {
-  const byMonth = new Map<string, PersonBreakdownPoint>();
-  for (const r of rows) {
-    const point = byMonth.get(r.year_month) ?? { year_month: r.year_month, 風馬: 0, ちか子: 0 };
-    point[r.payer_id] += r.total_amount;
-    byMonth.set(r.year_month, point);
-  }
-  return [...byMonth.values()].sort((a, b) => a.year_month.localeCompare(b.year_month));
-}
-
-/** Combined (both payers) total per category, for a single month — drives budget progress. */
+/** Total per category for a single month, scoped to one payer — drives per-person budget progress. */
 export function aggregateCategoryTotalsForMonth(
   rows: MonthlyTotalRow[],
-  yearMonth: string
+  yearMonth: string,
+  payerId: PayerId
 ): Record<string, number> {
   const totals: Record<string, number> = {};
   for (const r of rows) {
-    if (r.year_month !== yearMonth) continue;
+    if (r.year_month !== yearMonth || r.payer_id !== payerId) continue;
     totals[r.category_id] = (totals[r.category_id] ?? 0) + r.total_amount;
   }
   return totals;

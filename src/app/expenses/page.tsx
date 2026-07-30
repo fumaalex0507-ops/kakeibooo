@@ -1,24 +1,29 @@
 import { format, subMonths } from "date-fns";
 import { createServerClient } from "@/lib/supabase/server";
-import {
-  aggregateCategoryTotalsForMonth,
-  aggregateMonthlyTrend,
-  aggregatePersonBreakdown,
-} from "@/lib/calculations";
+import { aggregateCategoryTotalsForMonth, aggregateMonthlyTrend } from "@/lib/calculations";
 import { PeriodPicker } from "@/components/PeriodPicker";
+import { PersonTabs } from "@/components/PersonTabs";
 import { MonthlyTrendChart } from "@/components/MonthlyTrendChart";
-import { PersonBreakdownChart } from "@/components/PersonBreakdownChart";
+import { CategoryPieChart } from "@/components/CategoryPieChart";
 import { BudgetProgress } from "@/components/BudgetProgress";
 import { BudgetEditor } from "@/components/BudgetEditor";
-import { BUDGET_HIDDEN_CATEGORY_IDS, type Budget, type Category, type MonthlyTotalRow } from "@/lib/types";
+import {
+  BUDGET_HIDDEN_CATEGORY_IDS,
+  PAYERS,
+  type Budget,
+  type Category,
+  type MonthlyTotalRow,
+  type PayerId,
+} from "@/lib/types";
 
 interface Props {
-  searchParams: Promise<{ months?: string }>;
+  searchParams: Promise<{ months?: string; payer?: string }>;
 }
 
 export default async function ExpensesPage({ searchParams }: Props) {
   const params = await searchParams;
   const months = Number(params.months) || 6;
+  const payerId: PayerId = params.payer === "ちか子" ? "ちか子" : PAYERS[0];
 
   const now = new Date();
   const currentYearMonth = format(now, "yyyy-MM");
@@ -37,7 +42,7 @@ export default async function ExpensesPage({ searchParams }: Props) {
       .gte("year_month", cutoffYearMonth)
       .lte("year_month", currentYearMonth),
     supabase.from("categories").select("*").order("sort_order"),
-    supabase.from("budgets").select("*"),
+    supabase.from("budgets").select("*").eq("payer_id", payerId),
   ]);
 
   if (totalsError || catError || budgetError) {
@@ -49,11 +54,11 @@ export default async function ExpensesPage({ searchParams }: Props) {
   }
 
   const rows = (monthlyTotals ?? []) as MonthlyTotalRow[];
-  const trend = aggregateMonthlyTrend(rows);
-  const breakdown = aggregatePersonBreakdown(rows);
-  const categoryTotals = aggregateCategoryTotalsForMonth(rows, currentYearMonth);
+  const trend = aggregateMonthlyTrend(rows, payerId);
+  const categoryTotals = aggregateCategoryTotalsForMonth(rows, currentYearMonth, payerId);
 
-  const budgetCategories = ((categories ?? []) as Category[]).filter(
+  const allCategories = (categories ?? []) as Category[];
+  const budgetCategories = allCategories.filter(
     (c) => !BUDGET_HIDDEN_CATEGORY_IDS.includes(c.id as (typeof BUDGET_HIDDEN_CATEGORY_IDS)[number])
   );
 
@@ -61,24 +66,29 @@ export default async function ExpensesPage({ searchParams }: Props) {
     <div className="flex flex-col gap-8">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-lg font-semibold">支出分析</h1>
-        <PeriodPicker months={months} basePath="/expenses" />
+        <div className="flex items-center gap-3">
+          <PersonTabs current={payerId} basePath="/expenses" />
+          <PeriodPicker months={months} basePath="/expenses" />
+        </div>
       </div>
 
       <section>
-        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">月次推移</h2>
+        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+          {payerId}の今月の分類構成比
+        </h2>
+        <CategoryPieChart categories={allCategories} categoryTotals={categoryTotals} />
+      </section>
+
+      <section>
+        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+          {payerId}の月次推移
+        </h2>
         <MonthlyTrendChart data={trend} />
       </section>
 
       <section>
         <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          個人別の支出比較
-        </h2>
-        <PersonBreakdownChart data={breakdown} />
-      </section>
-
-      <section>
-        <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          今月の費目別予算消化率
+          {payerId}の今月の費目別予算消化率
         </h2>
         <BudgetProgress
           categories={budgetCategories}
@@ -86,7 +96,11 @@ export default async function ExpensesPage({ searchParams }: Props) {
           categoryTotals={categoryTotals}
         />
         <div className="mt-3">
-          <BudgetEditor categories={budgetCategories} initialBudgets={(budgets ?? []) as Budget[]} />
+          <BudgetEditor
+            categories={budgetCategories}
+            payerId={payerId}
+            initialBudgets={(budgets ?? []) as Budget[]}
+          />
         </div>
       </section>
     </div>

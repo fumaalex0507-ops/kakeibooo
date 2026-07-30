@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { supabase } from "@/lib/supabase/client";
-import type { Budget, Category } from "@/lib/types";
+import type { Budget, Category, PayerId } from "@/lib/types";
 
 interface Props {
   categories: Category[];
+  payerId: PayerId;
   initialBudgets: Budget[];
 }
 
-export function BudgetEditor({ categories, initialBudgets }: Props) {
+export function BudgetEditor({ categories, payerId, initialBudgets }: Props) {
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
@@ -21,7 +22,7 @@ export function BudgetEditor({ categories, initialBudgets }: Props) {
   async function save(categoryId: string) {
     const amount = Number(values[categoryId]) || 0;
     setSavingId(categoryId);
-    await supabase.from("budgets").upsert({ category_id: categoryId, monthly_amount: amount });
+    await supabase.from("budgets").upsert({ category_id: categoryId, payer_id: payerId, monthly_amount: amount });
     setSavingId(null);
   }
 
@@ -32,7 +33,7 @@ export function BudgetEditor({ categories, initialBudgets }: Props) {
         onClick={() => setOpen((o) => !o)}
         className="w-full px-4 py-2 text-left text-sm font-medium"
       >
-        {open ? "▼" : "▶"} 予算を編集
+        {open ? "▼" : "▶"} {payerId}の予算を編集
       </button>
       {open && (
         <div className="flex flex-col gap-2 border-t border-neutral-200 p-4 dark:border-neutral-800">

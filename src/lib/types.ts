@@ -57,6 +57,7 @@ export interface FixedCost {
 
 export interface Budget {
   category_id: string;
+  payer_id: PayerId;
   monthly_amount: number;
   updated_at: string;
 }
