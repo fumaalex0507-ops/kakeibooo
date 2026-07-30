@@ -2,7 +2,7 @@ import { format, subMonths } from "date-fns";
 import { createServerClient } from "@/lib/supabase/server";
 import {
   aggregateCategoryTotalsForMonth,
-  aggregateCumulativeDailySpend,
+  aggregateCumulativeDailySpendByCategory,
   aggregateMonthlyTrend,
   resolveEffectiveBudgets,
 } from "@/lib/calculations";
@@ -108,17 +108,25 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const budgetCategories = allCategories.filter(
     (c) => !BUDGET_HIDDEN_CATEGORY_IDS.includes(c.id as (typeof BUDGET_HIDDEN_CATEGORY_IDS)[number])
   );
-  const budgetCategoryIds = new Set(budgetCategories.map((c) => c.id));
 
   const effectiveBudgets = resolveEffectiveBudgets((allBudgets ?? []) as Budget[], budgetYearMonth);
-  const totalBudgetLine = Object.entries(effectiveBudgets)
-    .filter(([categoryId]) => budgetCategoryIds.has(categoryId))
-    .reduce((sum, [, amount]) => sum + amount, 0);
 
-  const discretionaryTransactions = (budgetMonthTransactions ?? []).filter((t) =>
-    budgetCategoryIds.has(t.category_id)
+  // Budget management only concerns categories that actually have a budget
+  // set (carried forward or explicit) — an unbudgeted discretionary category
+  // shouldn't count toward the budget line or get its own line in the chart.
+  const budgetedCategories = budgetCategories.filter((c) => effectiveBudgets[c.id] !== undefined);
+  const budgetedCategoryIds = new Set(budgetedCategories.map((c) => c.id));
+
+  const totalBudgetLine = budgetedCategories.reduce((sum, c) => sum + effectiveBudgets[c.id], 0);
+
+  const budgetedTransactions = (budgetMonthTransactions ?? []).filter((t) =>
+    budgetedCategoryIds.has(t.category_id)
   );
-  const cumulativeSpend = aggregateCumulativeDailySpend(discretionaryTransactions, budgetYearMonth);
+  const cumulativeSpend = aggregateCumulativeDailySpendByCategory(
+    budgetedTransactions,
+    budgetYearMonth,
+    [...budgetedCategoryIds]
+  );
 
   return (
     <div className="flex flex-col gap-8">
@@ -126,6 +134,46 @@ export default async function ExpensesPage({ searchParams }: Props) {
         <h1 className="text-lg font-semibold">支出分析</h1>
         <PersonTabs current={payerId} basePath="/expenses" />
       </div>
+
+      <section>
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
+            {payerId}の予算管理（{budgetYearMonth}）
+          </h2>
+          <YearMonthPicker
+            year={budgetYear}
+            month={budgetMonth}
+            basePath="/expenses"
+            yearParam="budgetYear"
+            monthParam="budgetMonth"
+          />
+        </div>
+
+        <div className="mb-4">
+          <h3 className="mb-1 text-xs text-neutral-400">支出の積み上がり（費目別・予算ライン付き）</h3>
+          <CumulativeSpendChart
+            data={cumulativeSpend}
+            categories={budgetedCategories}
+            allCategories={allCategories}
+            budgetLine={totalBudgetLine}
+          />
+        </div>
+
+        <BudgetProgress
+          categories={budgetCategories}
+          budgetAmounts={effectiveBudgets}
+          categoryTotals={budgetCategoryTotals}
+        />
+        <div className="mt-3">
+          <BudgetEditor
+            key={budgetYearMonth}
+            categories={budgetCategories}
+            payerId={payerId}
+            yearMonth={budgetYearMonth}
+            budgetAmounts={effectiveBudgets}
+          />
+        </div>
+      </section>
 
       <section>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
@@ -151,41 +199,6 @@ export default async function ExpensesPage({ searchParams }: Props) {
           <PeriodPicker months={months} basePath="/expenses" />
         </div>
         <MonthlyTrendChart data={trend} />
-      </section>
-
-      <section>
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
-            {payerId}の予算管理（{budgetYearMonth}）
-          </h2>
-          <YearMonthPicker
-            year={budgetYear}
-            month={budgetMonth}
-            basePath="/expenses"
-            yearParam="budgetYear"
-            monthParam="budgetMonth"
-          />
-        </div>
-
-        <div className="mb-4">
-          <h3 className="mb-1 text-xs text-neutral-400">支出の積み上がり（予算ライン付き）</h3>
-          <CumulativeSpendChart data={cumulativeSpend} budgetLine={totalBudgetLine} />
-        </div>
-
-        <BudgetProgress
-          categories={budgetCategories}
-          budgetAmounts={effectiveBudgets}
-          categoryTotals={budgetCategoryTotals}
-        />
-        <div className="mt-3">
-          <BudgetEditor
-            key={budgetYearMonth}
-            categories={budgetCategories}
-            payerId={payerId}
-            yearMonth={budgetYearMonth}
-            budgetAmounts={effectiveBudgets}
-          />
-        </div>
       </section>
     </div>
   );

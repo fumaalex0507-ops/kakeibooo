@@ -101,30 +101,41 @@ export function resolveEffectiveBudgets(rows: Budget[], targetYearMonth: string)
   return result;
 }
 
-export interface CumulativeSpendPoint {
-  day: number;
-  cumulative: number;
-}
+export type CumulativeSpendByCategoryPoint = { day: number } & Record<string, number>;
 
-/** Running daily total across the given month's transactions, for the budget burn-up chart. */
-export function aggregateCumulativeDailySpend(
-  transactions: { date: string; total_amount: number }[],
-  yearMonth: string
-): CumulativeSpendPoint[] {
+/**
+ * Running daily total per category across the given month's transactions,
+ * for the budget burn-up chart — one series per category so each can be
+ * color-coded and shown in a legend, rather than one combined line.
+ */
+export function aggregateCumulativeDailySpendByCategory(
+  transactions: { date: string; total_amount: number; category_id: string }[],
+  yearMonth: string,
+  categoryIds: string[]
+): CumulativeSpendByCategoryPoint[] {
   const [year, month] = yearMonth.split("-").map(Number);
   const lastDay = new Date(year, month, 0).getDate();
 
-  const dailyTotals = new Array<number>(lastDay + 1).fill(0);
+  const dailyByCategory: Record<string, number[]> = {};
+  for (const id of categoryIds) dailyByCategory[id] = new Array(lastDay + 1).fill(0);
+
   for (const t of transactions) {
+    if (!dailyByCategory[t.category_id]) continue;
     const day = Number(t.date.split("-")[2]);
-    if (day >= 1 && day <= lastDay) dailyTotals[day] += t.total_amount;
+    if (day >= 1 && day <= lastDay) dailyByCategory[t.category_id][day] += t.total_amount;
   }
 
-  const points: CumulativeSpendPoint[] = [];
-  let running = 0;
+  const running: Record<string, number> = {};
+  for (const id of categoryIds) running[id] = 0;
+
+  const points: CumulativeSpendByCategoryPoint[] = [];
   for (let day = 1; day <= lastDay; day++) {
-    running += dailyTotals[day];
-    points.push({ day, cumulative: running });
+    const point = { day } as CumulativeSpendByCategoryPoint;
+    for (const id of categoryIds) {
+      running[id] += dailyByCategory[id][day];
+      point[id] = running[id];
+    }
+    points.push(point);
   }
   return points;
 }

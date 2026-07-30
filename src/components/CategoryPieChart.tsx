@@ -1,25 +1,8 @@
 "use client";
 
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { colorForCategory } from "@/lib/colors";
 import type { Category } from "@/lib/types";
-
-// Fixed categorical palette, assigned in a stable order (by category
-// sort_order) so a given category always gets the same color across
-// renders, independent of which categories have nonzero spending.
-const COLORS = [
-  "#0d9488", // teal
-  "#f59e0b", // amber
-  "#6366f1", // indigo
-  "#ec4899", // pink
-  "#84cc16", // lime
-  "#06b6d4", // cyan
-  "#f97316", // orange
-  "#8b5cf6", // violet
-  "#14b8a6", // teal-light
-  "#ef4444", // red
-  "#a3a3a3", // neutral
-  "#3b82f6", // blue
-];
 
 // Shared anchor so the absolutely-positioned total-amount overlay lines up
 // exactly with the donut's actual center, regardless of how much vertical
@@ -34,7 +17,7 @@ interface Props {
 
 export function CategoryPieChart({ categories, categoryTotals }: Props) {
   const data = categories
-    .map((c) => ({ name: c.name, value: categoryTotals[c.id] ?? 0 }))
+    .map((c) => ({ id: c.id, name: c.name, value: categoryTotals[c.id] ?? 0 }))
     .filter((d) => d.value > 0);
 
   if (data.length === 0) {
@@ -57,8 +40,8 @@ export function CategoryPieChart({ categories, categoryTotals }: Props) {
             outerRadius={100}
             paddingAngle={1}
           >
-            {data.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+            {data.map((d) => (
+              <Cell key={d.id} fill={colorForCategory(d.id, categories)} />
             ))}
           </Pie>
           <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
