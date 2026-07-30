@@ -57,7 +57,7 @@ export default async function SettlementPage({ searchParams }: Props) {
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
-          光熱費の入力ステータス
+          水道光熱費の入力ステータス
         </h2>
         <UtilityStatusBadges status={status} />
       </div>
