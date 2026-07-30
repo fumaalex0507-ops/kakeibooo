@@ -9,7 +9,7 @@ export function SettlementSummary({ result }: { result: SettlementResult }) {
         <p className="text-xl font-semibold">精算の必要はありません</p>
       ) : (
         <p className="text-2xl font-bold">
-          {from}が{to}に <span className="text-teal-600 dark:text-teal-400">¥{amount.toLocaleString("ja-JP")}</span> 支払う
+          {from}⇒{to} <span className="text-teal-600 dark:text-teal-400">¥{amount.toLocaleString("ja-JP")}</span>
         </p>
       )}
       <div className="mt-4 flex justify-center gap-8 text-sm text-neutral-500 dark:text-neutral-400">
