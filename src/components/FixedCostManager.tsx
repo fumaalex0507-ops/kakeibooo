@@ -92,24 +92,28 @@ function FixedCostFields({
         </select>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={value.ownShare}
-          onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
-          placeholder="自己負担"
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        />
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={value.splitAmount}
-          onChange={(e) => onChange({ ...value, splitAmount: e.target.value })}
-          placeholder="折半"
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        />
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">自己負担</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={value.ownShare}
+            onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">折半</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={value.splitAmount}
+            onChange={(e) => onChange({ ...value, splitAmount: e.target.value })}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          />
+        </div>
       </div>
       <label className="flex items-center gap-2 text-sm">
         発生日（毎月）
