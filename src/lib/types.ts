@@ -1,0 +1,55 @@
+export type PayerId = "風馬" | "ちか子";
+
+export const PAYERS: readonly PayerId[] = ["風馬", "ちか子"] as const;
+
+export const UTILITY_CATEGORY_IDS = ["electricity", "gas", "water"] as const;
+
+export interface Category {
+  id: string;
+  name: string;
+  sort_order: number;
+}
+
+export interface Transaction {
+  id: string;
+  date: string;
+  year_month: string;
+  payer_id: PayerId;
+  category_id: string;
+  total_amount: number;
+  own_share: number;
+  other_share: number;
+  split_amount: number;
+  fixed_cost_id: string | null;
+  created_at: string;
+}
+
+export interface FixedCost {
+  id: string;
+  title: string;
+  category_id: string;
+  payer_id: PayerId;
+  total_amount: number;
+  own_share: number;
+  other_share: number;
+  day_of_month: number;
+  active: boolean;
+  created_at: string;
+}
+
+export interface Budget {
+  category_id: string;
+  monthly_amount: number;
+  updated_at: string;
+}
+
+export interface MonthlyTotalRow {
+  year_month: string;
+  payer_id: PayerId;
+  category_id: string;
+  total_amount: number;
+  own_share: number;
+  other_share: number;
+  split_amount: number;
+  tx_count: number;
+}
