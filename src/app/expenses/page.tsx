@@ -34,6 +34,11 @@ interface Props {
     budgetYear?: string;
     budgetMonth?: string;
     trendCategory?: string;
+    trendMode?: string;
+    trendFromYear?: string;
+    trendFromMonth?: string;
+    trendToYear?: string;
+    trendToMonth?: string;
   }>;
 }
 
@@ -45,6 +50,20 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const now = new Date();
   const currentYearMonth = format(now, "yyyy-MM");
   const cutoffYearMonth = format(subMonths(now, months - 1), "yyyy-MM");
+
+  const isCustomTrend = params.trendMode === "custom";
+  const defaultCustomFrom = subMonths(now, 5);
+  const trendFromYear = Number(params.trendFromYear) || defaultCustomFrom.getFullYear();
+  const trendFromMonth = Number(params.trendFromMonth) || defaultCustomFrom.getMonth() + 1;
+  const trendToYear = Number(params.trendToYear) || now.getFullYear();
+  const trendToMonth = Number(params.trendToMonth) || now.getMonth() + 1;
+
+  const trendStartYearMonth = isCustomTrend
+    ? `${trendFromYear}-${String(trendFromMonth).padStart(2, "0")}`
+    : cutoffYearMonth;
+  const trendEndYearMonth = isCustomTrend
+    ? `${trendToYear}-${String(trendToMonth).padStart(2, "0")}`
+    : currentYearMonth;
 
   const pieYear = Number(params.pieYear) || now.getFullYear();
   const pieMonth = Number(params.pieMonth) || now.getMonth() + 1;
@@ -69,8 +88,8 @@ export default async function ExpensesPage({ searchParams }: Props) {
     supabase
       .from("v_monthly_totals")
       .select("*")
-      .gte("year_month", cutoffYearMonth)
-      .lte("year_month", currentYearMonth),
+      .gte("year_month", trendStartYearMonth)
+      .lte("year_month", trendEndYearMonth),
     supabase.from("v_monthly_totals").select("*").eq("year_month", pieYearMonth).eq("payer_id", payerId),
     supabase.from("v_monthly_totals").select("*").eq("year_month", budgetYearMonth).eq("payer_id", payerId),
     supabase
@@ -202,8 +221,28 @@ export default async function ExpensesPage({ searchParams }: Props) {
           <h2 className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
             {payerId}の月次推移
           </h2>
-          <PeriodPicker months={months} basePath="/expenses" />
+          <PeriodPicker months={months} isCustom={isCustomTrend} basePath="/expenses" />
         </div>
+        {isCustomTrend && (
+          <div className="mb-3 flex flex-wrap items-center gap-2 text-sm text-neutral-500 dark:text-neutral-400">
+            <span>開始</span>
+            <YearMonthPicker
+              year={trendFromYear}
+              month={trendFromMonth}
+              basePath="/expenses"
+              yearParam="trendFromYear"
+              monthParam="trendFromMonth"
+            />
+            <span>終了</span>
+            <YearMonthPicker
+              year={trendToYear}
+              month={trendToMonth}
+              basePath="/expenses"
+              yearParam="trendToYear"
+              monthParam="trendToMonth"
+            />
+          </div>
+        )}
         <div className="mb-3">
           <TrendCategoryTabs categories={trendTabCategories} current={trendCategory} basePath="/expenses" />
         </div>
