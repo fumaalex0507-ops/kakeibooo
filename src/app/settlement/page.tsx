@@ -3,9 +3,10 @@ import { createServerClient } from "@/lib/supabase/server";
 import { computeSettlement, utilityStatus } from "@/lib/calculations";
 import { YearMonthPicker } from "@/components/YearMonthPicker";
 import { SettlementSummary } from "@/components/SettlementSummary";
+import { SettlementCompletionToggle } from "@/components/SettlementCompletionToggle";
 import { UtilityStatusBadges } from "@/components/UtilityStatusBadges";
 import { TransactionTable } from "@/components/TransactionTable";
-import type { Category, Transaction } from "@/lib/types";
+import type { Category, SettlementStatus, Transaction } from "@/lib/types";
 
 interface Props {
   searchParams: Promise<{ year?: string; month?: string }>;
@@ -24,20 +25,20 @@ export default async function SettlementPage({ searchParams }: Props) {
   const yearMonth = `${year}-${String(month).padStart(2, "0")}`;
   const supabase = createServerClient();
 
-  const [{ data: transactions, error: txError }, { data: categories, error: catError }] =
-    await Promise.all([
-      supabase
-        .from("transactions")
-        .select("*")
-        .eq("year_month", yearMonth)
-        .order("date"),
-      supabase.from("categories").select("*").order("sort_order"),
-    ]);
+  const [
+    { data: transactions, error: txError },
+    { data: categories, error: catError },
+    { data: settlementStatus, error: statusError },
+  ] = await Promise.all([
+    supabase.from("transactions").select("*").eq("year_month", yearMonth).order("date"),
+    supabase.from("categories").select("*").order("sort_order"),
+    supabase.from("settlement_status").select("*").eq("year_month", yearMonth).maybeSingle(),
+  ]);
 
-  if (txError || catError) {
+  if (txError || catError || statusError) {
     return (
       <p className="text-red-600 dark:text-red-400">
-        データの取得に失敗しました: {txError?.message ?? catError?.message}
+        データの取得に失敗しました: {txError?.message ?? catError?.message ?? statusError?.message}
       </p>
     );
   }
@@ -45,6 +46,7 @@ export default async function SettlementPage({ searchParams }: Props) {
   const rows = (transactions ?? []) as Transaction[];
   const settlement = computeSettlement(rows);
   const status = utilityStatus(rows);
+  const completionStatus = settlementStatus as SettlementStatus | null;
 
   return (
     <div className="flex flex-col gap-6">
@@ -54,6 +56,13 @@ export default async function SettlementPage({ searchParams }: Props) {
       </div>
 
       <SettlementSummary result={settlement} />
+
+      <SettlementCompletionToggle
+        key={yearMonth}
+        yearMonth={yearMonth}
+        initialCompleted={completionStatus?.completed ?? false}
+        initialCompletedAt={completionStatus?.completed_at ?? null}
+      />
 
       <div>
         <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">

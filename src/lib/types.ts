@@ -67,6 +67,12 @@ export interface Budget {
   updated_at: string;
 }
 
+export interface SettlementStatus {
+  year_month: string;
+  completed: boolean;
+  completed_at: string | null;
+}
+
 export interface MonthlyTotalRow {
   year_month: string;
   payer_id: PayerId;
