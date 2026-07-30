@@ -13,9 +13,13 @@ interface Props {
 }
 
 export function MonthlyTrendChart({ data, categories, selectedCategoryId }: Props) {
-  const barCategories = selectedCategoryId
+  const tabCategories = selectedCategoryId
     ? categories.filter((c) => c.id === selectedCategoryId)
     : categories;
+
+  // Only show categories that actually have a nonzero value somewhere in
+  // the displayed period — order is unaffected since we filter, not sort.
+  const barCategories = tabCategories.filter((c) => data.some((point) => (point[c.id] ?? 0) > 0));
 
   return (
     <ResponsiveContainer width="100%" height={280}>
