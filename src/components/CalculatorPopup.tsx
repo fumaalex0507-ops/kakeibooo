@@ -24,7 +24,13 @@ function toEvaluable(expression: string) {
 export function CalculatorPopup({ title, onInput, onClose }: Props) {
   const [expression, setExpression] = useState("");
 
-  const result = evaluateExpression(toEvaluable(expression) || "0");
+  const evaluable = toEvaluable(expression) || "0";
+  const result = evaluateExpression(evaluable);
+  // Ending with an operator ("633×") is a normal mid-calculation state, not
+  // a mistake — only treat it as a real error once it can't be completed
+  // into something valid just by pressing more digits.
+  const isMidExpression = /[+\-*/]\s*$/.test(evaluable);
+  const showError = result === null && !isMidExpression;
 
   function press(key: string) {
     if (key === "C") {
@@ -64,8 +70,8 @@ export function CalculatorPopup({ title, onInput, onClose }: Props) {
           <div className="min-h-[1.25rem] text-sm text-neutral-500 dark:text-neutral-400">
             {expression || "0"}
           </div>
-          <div className={clsx("text-xl font-semibold", result === null && "text-red-500")}>
-            {result === null ? "エラー" : `¥${result.toLocaleString("ja-JP")}`}
+          <div className={clsx("text-xl font-semibold", showError && "text-red-500")}>
+            {showError ? "エラー" : result !== null ? `¥${result.toLocaleString("ja-JP")}` : " "}
           </div>
         </div>
 
