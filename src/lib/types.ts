@@ -71,6 +71,7 @@ export interface SettlementStatus {
   year_month: string;
   completed: boolean;
   completed_at: string | null;
+  water_skipped: boolean;
 }
 
 export interface MonthlyTotalRow {
