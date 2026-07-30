@@ -49,7 +49,7 @@ export default async function SettlementPage({ searchParams }: Props) {
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-lg font-semibold">精算ダッシュボード</h1>
+        <h1 className="text-lg font-semibold">精算</h1>
         <YearMonthPicker year={year} month={month} basePath="/settlement" />
       </div>
 

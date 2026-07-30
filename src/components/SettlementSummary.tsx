@@ -1,7 +1,7 @@
 import type { SettlementResult } from "@/lib/calculations";
 
 export function SettlementSummary({ result }: { result: SettlementResult }) {
-  const { from, to, amount, frontedTotal } = result;
+  const { from, to, amount, burdenForOther } = result;
 
   return (
     <div className="rounded-lg border border-neutral-200 p-6 text-center dark:border-neutral-800">
@@ -13,8 +13,8 @@ export function SettlementSummary({ result }: { result: SettlementResult }) {
         </p>
       )}
       <div className="mt-4 flex justify-center gap-8 text-sm text-neutral-500 dark:text-neutral-400">
-        <span>風馬の立替合計: ¥{frontedTotal["風馬"].toLocaleString("ja-JP")}</span>
-        <span>ちか子の立替合計: ¥{frontedTotal["ちか子"].toLocaleString("ja-JP")}</span>
+        <span>風馬がちか子の分を負担: ¥{burdenForOther["風馬"].toLocaleString("ja-JP")}</span>
+        <span>ちか子が風馬の分を負担: ¥{burdenForOther["ちか子"].toLocaleString("ja-JP")}</span>
       </div>
     </div>
   );

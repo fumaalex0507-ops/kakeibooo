@@ -1,8 +1,14 @@
 import type { Budget, MonthlyTotalRow, PayerId, Transaction } from "./types";
 
 export interface SettlementResult {
-  /** Total amount each person fronted (sum of total_amount), for display context */
-  frontedTotal: Record<PayerId, number>;
+  /**
+   * How much each person substantially bore of the OTHER person's portion
+   * this month: for transactions they paid, their other_share (the other
+   * person's exclusive share fronted for them) plus half of split_amount
+   * (the other person's half of the shared pool). Equivalently, how much
+   * the other person owes them.
+   */
+  burdenForOther: Record<PayerId, number>;
   /** Who pays whom, and how much. amount is always >= 0. */
   from: PayerId | null;
   to: PayerId | null;
@@ -17,23 +23,21 @@ export interface SettlementResult {
  * rounding never compounds drift across many transactions.
  */
 export function computeSettlement(transactions: Transaction[]): SettlementResult {
-  const owedTo: Record<PayerId, number> = { 風馬: 0, ちか子: 0 };
-  const frontedTotal: Record<PayerId, number> = { 風馬: 0, ちか子: 0 };
+  const burdenForOther: Record<PayerId, number> = { 風馬: 0, ちか子: 0 };
 
   for (const t of transactions) {
-    owedTo[t.payer_id] += t.other_share + t.split_amount / 2;
-    frontedTotal[t.payer_id] += t.total_amount;
+    burdenForOther[t.payer_id] += t.other_share + t.split_amount / 2;
   }
 
-  const net = owedTo["風馬"] - owedTo["ちか子"]; // positive => ちか子 owes 風馬
+  const net = burdenForOther["風馬"] - burdenForOther["ちか子"]; // positive => ちか子 owes 風馬
 
   if (net === 0) {
-    return { frontedTotal, from: null, to: null, amount: 0 };
+    return { burdenForOther, from: null, to: null, amount: 0 };
   }
 
   return net > 0
-    ? { frontedTotal, from: "ちか子", to: "風馬", amount: Math.round(net) }
-    : { frontedTotal, from: "風馬", to: "ちか子", amount: Math.round(-net) };
+    ? { burdenForOther, from: "ちか子", to: "風馬", amount: Math.round(net) }
+    : { burdenForOther, from: "風馬", to: "ちか子", amount: Math.round(-net) };
 }
 
 export function utilityStatus(transactions: Transaction[]) {
