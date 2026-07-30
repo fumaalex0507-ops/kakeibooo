@@ -93,17 +93,6 @@ function FixedCostFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium">自己負担</label>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            value={value.ownShare}
-            onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
-            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-          />
-        </div>
-        <div className="flex flex-col gap-1">
           <label className="text-sm font-medium">折半</label>
           <input
             type="number"
@@ -111,6 +100,17 @@ function FixedCostFields({
             min={0}
             value={value.splitAmount}
             onChange={(e) => onChange({ ...value, splitAmount: e.target.value })}
+            className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">自己負担</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={value.ownShare}
+            onChange={(e) => onChange({ ...value, ownShare: e.target.value })}
             className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
           />
         </div>
