@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { PAYERS, type Category, type PayerId, type Transaction } from "@/lib/types";
@@ -149,6 +150,7 @@ function TransactionEditRow({
 }
 
 export function TransactionTable({ transactions: initialTransactions, categories }: Props) {
+  const router = useRouter();
   const [transactions, setTransactions] = useState(initialTransactions);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [fields, setFields] = useState<EditFields | null>(null);
@@ -197,6 +199,10 @@ export function TransactionTable({ transactions: initialTransactions, categories
 
     setTransactions((prev) => prev.map((t) => (t.id === editingId ? (data as Transaction) : t)));
     cancelEditing();
+    // The settlement summary and utility status above are computed
+    // server-side from the full month's data — refresh so they pick up
+    // this edit instead of only this table updating itself.
+    router.refresh();
   }
 
   async function remove(t: Transaction) {
@@ -206,6 +212,7 @@ export function TransactionTable({ transactions: initialTransactions, categories
     const { error } = await supabase.from("transactions").delete().eq("id", t.id);
     if (!error) {
       setTransactions((prev) => prev.filter((row) => row.id !== t.id));
+      router.refresh();
     }
   }
 

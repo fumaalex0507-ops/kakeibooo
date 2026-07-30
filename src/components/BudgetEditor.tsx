@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import type { Category, PayerId } from "@/lib/types";
 
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function BudgetEditor({ categories, payerId, yearMonth, budgetAmounts }: Props) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [values, setValues] = useState<Record<string, string>>(() => {
     const map: Record<string, string> = {};
@@ -26,10 +28,13 @@ export function BudgetEditor({ categories, payerId, yearMonth, budgetAmounts }: 
   async function save(categoryId: string) {
     const amount = Number(values[categoryId]) || 0;
     setSavingId(categoryId);
-    await supabase
+    const { error } = await supabase
       .from("budgets")
       .upsert({ category_id: categoryId, payer_id: payerId, year_month: yearMonth, monthly_amount: amount });
     setSavingId(null);
+    // BudgetProgress and the cumulative chart above compute from
+    // server-fetched budget amounts — refresh so they reflect this change.
+    if (!error) router.refresh();
   }
 
   return (
