@@ -54,7 +54,7 @@ export function CalculatorPopup({ title, onInput, onClose }: Props) {
 
   function confirm() {
     if (result === null) return;
-    onInput(result);
+    onInput(Math.round(result));
     onClose();
   }
 
