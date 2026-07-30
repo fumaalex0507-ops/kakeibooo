@@ -197,7 +197,7 @@ function FixedCostRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
+    <div className="flex flex-wrap items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
       <div>
         <span className="font-medium">{fc.title}</span>{" "}
         <span className="text-neutral-500 dark:text-neutral-400">
@@ -205,7 +205,7 @@ function FixedCostRow({
           {fc.total_amount.toLocaleString("ja-JP")}）
         </span>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
           onClick={() => onToggleActive(fc)}
