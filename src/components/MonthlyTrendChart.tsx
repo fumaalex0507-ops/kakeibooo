@@ -26,12 +26,28 @@ export function MonthlyTrendChart({ data, categories, selectedCategoryId }: Prop
         <Tooltip formatter={(value) => `¥${Number(value).toLocaleString("ja-JP")}`} />
         <Legend
           content={() => (
-            <ul className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-2 text-xs">
+            <ul
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: "4px 16px",
+                paddingTop: 8,
+                fontSize: 12,
+                listStyle: "none",
+              }}
+            >
               {barCategories.map((c) => (
-                <li key={c.id} className="flex items-center gap-1.5">
+                <li key={c.id} style={{ display: "flex", alignItems: "center", gap: 6 }}>
                   <span
-                    className="inline-block h-2.5 w-2.5 rounded-sm"
-                    style={{ backgroundColor: colorForCategory(c.id, categories) }}
+                    style={{
+                      display: "inline-block",
+                      flexShrink: 0,
+                      width: 10,
+                      height: 10,
+                      borderRadius: 2,
+                      backgroundColor: colorForCategory(c.id, categories),
+                    }}
                   />
                   {c.name}
                 </li>
