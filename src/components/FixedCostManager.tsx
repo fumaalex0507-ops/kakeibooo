@@ -69,28 +69,40 @@ function FixedCostFields({
         required
       />
       <div className="grid grid-cols-2 gap-3">
-        <select
-          value={value.categoryId}
-          onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        >
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <select
-          value={value.payerId}
-          onChange={(e) => onChange({ ...value, payerId: e.target.value as PayerId })}
-          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        >
-          {PAYERS.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
+        <div className="flex items-center gap-2 rounded-md border border-neutral-300 px-3 dark:border-neutral-700">
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: colorForCategory(value.categoryId, categories) }}
+          />
+          <select
+            value={value.categoryId}
+            onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
+            className="w-full bg-transparent py-2 text-sm dark:bg-neutral-900"
+          >
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-2 rounded-md border border-neutral-300 px-3 dark:border-neutral-700">
+          <span
+            className="h-2.5 w-2.5 shrink-0 rounded-full"
+            style={{ backgroundColor: colorForPayer(value.payerId) }}
+          />
+          <select
+            value={value.payerId}
+            onChange={(e) => onChange({ ...value, payerId: e.target.value as PayerId })}
+            className="w-full bg-transparent py-2 text-sm dark:bg-neutral-900"
+          >
+            {PAYERS.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
@@ -199,25 +211,25 @@ function FixedCostRow({
 
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-        <span
-          className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-          style={{ backgroundColor: colorForPayer(fc.payer_id) }}
-        >
-          {fc.payer_id}
-        </span>
-        <span
-          className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
-          style={{ backgroundColor: colorForCategory(fc.category_id, categories) }}
-        >
-          {categoryName(fc.category_id)}
-        </span>
-        <span>
-          <span className="font-medium">{fc.title}</span>{" "}
-          <span className="text-neutral-500 dark:text-neutral-400">
-            （毎月{fc.day_of_month}日・¥{fc.total_amount.toLocaleString("ja-JP")}）
+      <div className="flex flex-col items-start gap-1">
+        <span className="text-left font-medium">{fc.title}</span>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            style={{ backgroundColor: colorForPayer(fc.payer_id) }}
+          >
+            {fc.payer_id}
           </span>
-        </span>
+          <span
+            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            style={{ backgroundColor: colorForCategory(fc.category_id, categories) }}
+          >
+            {categoryName(fc.category_id)}
+          </span>
+          <span className="text-neutral-500 dark:text-neutral-400">
+            毎月{fc.day_of_month}日・¥{fc.total_amount.toLocaleString("ja-JP")}
+          </span>
+        </div>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <button
