@@ -90,13 +90,12 @@ export default async function ExpensesPage({ searchParams }: Props) {
       .select("*")
       .gte("year_month", trendStartYearMonth)
       .lte("year_month", trendEndYearMonth),
-    supabase.from("v_monthly_totals").select("*").eq("year_month", pieYearMonth).eq("payer_id", payerId),
-    supabase.from("v_monthly_totals").select("*").eq("year_month", budgetYearMonth).eq("payer_id", payerId),
+    supabase.from("v_monthly_totals").select("*").eq("year_month", pieYearMonth),
+    supabase.from("v_monthly_totals").select("*").eq("year_month", budgetYearMonth),
     supabase
       .from("transactions")
-      .select("date,total_amount,category_id")
-      .eq("year_month", budgetYearMonth)
-      .eq("payer_id", payerId),
+      .select("date,category_id,payer_id,own_share,other_share,split_amount")
+      .eq("year_month", budgetYearMonth),
     supabase.from("categories").select("*").order("sort_order"),
     supabase.from("budgets").select("*").eq("payer_id", payerId),
   ]);
@@ -150,7 +149,8 @@ export default async function ExpensesPage({ searchParams }: Props) {
   const cumulativeSpend = aggregateCumulativeDailySpendByCategory(
     budgetedTransactions,
     budgetYearMonth,
-    [...budgetedCategoryIds]
+    [...budgetedCategoryIds],
+    payerId
   );
 
   return (

@@ -52,6 +52,22 @@ export function utilityStatus(transactions: Transaction[]) {
 export type MonthlyCategoryPoint = { year_month: string } & Record<string, number>;
 
 /**
+ * A row only carries one payer_id (whoever paid), but a split (折半) cost is
+ * meant to count as half for each person. A row's contribution to a given
+ * person's true spend is: their own exclusive share, plus half of whatever
+ * was split — regardless of which of the two people the row's payer_id is —
+ * mirroring computeSettlement's halving of split_amount.
+ */
+function payerShare(
+  row: { payer_id: PayerId; own_share: number; other_share: number; split_amount: number },
+  payerId: PayerId
+): number {
+  return row.payer_id === payerId
+    ? row.own_share + row.split_amount / 2
+    : row.other_share + row.split_amount / 2;
+}
+
+/**
  * One point per month, with each category's total_amount as its own key —
  * drives the stacked monthly trend bar chart (one Bar per category) so the
  * composition within each month is visible, not just the combined total.
@@ -62,9 +78,8 @@ export function aggregateMonthlyTrendByCategory(
 ): MonthlyCategoryPoint[] {
   const byMonth = new Map<string, MonthlyCategoryPoint>();
   for (const r of rows) {
-    if (r.payer_id !== payerId) continue;
     const point = byMonth.get(r.year_month) ?? ({ year_month: r.year_month } as MonthlyCategoryPoint);
-    point[r.category_id] = (point[r.category_id] ?? 0) + r.total_amount;
+    point[r.category_id] = (point[r.category_id] ?? 0) + payerShare(r, payerId);
     byMonth.set(r.year_month, point);
   }
   return [...byMonth.values()].sort((a, b) => a.year_month.localeCompare(b.year_month));
@@ -78,8 +93,8 @@ export function aggregateCategoryTotalsForMonth(
 ): Record<string, number> {
   const totals: Record<string, number> = {};
   for (const r of rows) {
-    if (r.year_month !== yearMonth || r.payer_id !== payerId) continue;
-    totals[r.category_id] = (totals[r.category_id] ?? 0) + r.total_amount;
+    if (r.year_month !== yearMonth) continue;
+    totals[r.category_id] = (totals[r.category_id] ?? 0) + payerShare(r, payerId);
   }
   return totals;
 }
@@ -113,9 +128,17 @@ export type CumulativeSpendByCategoryPoint = { day: number } & Record<string, nu
  * color-coded and shown in a legend, rather than one combined line.
  */
 export function aggregateCumulativeDailySpendByCategory(
-  transactions: { date: string; total_amount: number; category_id: string }[],
+  transactions: {
+    date: string;
+    category_id: string;
+    payer_id: PayerId;
+    own_share: number;
+    other_share: number;
+    split_amount: number;
+  }[],
   yearMonth: string,
-  categoryIds: string[]
+  categoryIds: string[],
+  payerId: PayerId
 ): CumulativeSpendByCategoryPoint[] {
   const [year, month] = yearMonth.split("-").map(Number);
   const lastDay = new Date(year, month, 0).getDate();
@@ -126,7 +149,7 @@ export function aggregateCumulativeDailySpendByCategory(
   for (const t of transactions) {
     if (!dailyByCategory[t.category_id]) continue;
     const day = Number(t.date.split("-")[2]);
-    if (day >= 1 && day <= lastDay) dailyByCategory[t.category_id][day] += t.total_amount;
+    if (day >= 1 && day <= lastDay) dailyByCategory[t.category_id][day] += payerShare(t, payerId);
   }
 
   const running: Record<string, number> = {};
