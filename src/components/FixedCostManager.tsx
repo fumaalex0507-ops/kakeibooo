@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { colorForCategory, colorForPayer } from "@/lib/colors";
+import { PlusIcon } from "@/components/icons/PlusIcon";
 import { PAYERS, type Category, type FixedCost, type PayerId } from "@/lib/types";
 
 interface Props {
@@ -283,6 +284,12 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
   });
   const [addError, setAddError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
+  const [selectedPayer, setSelectedPayer] = useState<PayerId>(PAYERS[0]);
+  const [isAddOpen, setIsAddOpen] = useState(false);
+
+  const visibleFixedCosts = fixedCosts.filter(
+    (fc) => fc.payer_id === selectedPayer || shareLabel(fc) === "折半"
+  );
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -353,12 +360,60 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
 
   return (
     <div className="flex flex-col gap-6">
+      <div className="flex gap-2 text-sm">
+        {PAYERS.map((payer) => {
+          const isSelected = selectedPayer === payer;
+          return (
+            <button
+              key={payer}
+              type="button"
+              onClick={() => setSelectedPayer(payer)}
+              className={clsx(
+                "rounded-full px-3 py-1 transition-colors",
+                isSelected
+                  ? "text-white"
+                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+              )}
+              style={isSelected ? { backgroundColor: colorForPayer(payer) } : undefined}
+            >
+              {payer}
+            </button>
+          );
+        })}
+      </div>
+
       <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-medium">固定費一覧</h2>
+          <button
+            type="button"
+            onClick={() => setIsAddOpen((v) => !v)}
+            aria-label="固定費を追加"
+            title="固定費を追加"
+            className="rounded-full p-1.5 text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          >
+            <PlusIcon className={clsx("h-4 w-4 transition-transform", isAddOpen && "rotate-45")} />
+          </button>
+        </div>
+
+        {isAddOpen && (
+          <form
+            onSubmit={handleAdd}
+            className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800"
+          >
+            <FixedCostFields categories={categories} value={newFields} onChange={setNewFields} />
+            {addError && <p className="text-sm text-red-600 dark:text-red-400">{addError}</p>}
+            <button type="submit" className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
+              追加
+            </button>
+          </form>
+        )}
+
         {listError && <p className="text-sm text-red-600 dark:text-red-400">{listError}</p>}
-        {fixedCosts.length === 0 && (
+        {visibleFixedCosts.length === 0 && (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">固定費はまだ登録されていません。</p>
         )}
-        {fixedCosts.map((fc) => (
+        {visibleFixedCosts.map((fc) => (
           <FixedCostRow
             key={fc.id}
             fc={fc}
@@ -369,15 +424,6 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
           />
         ))}
       </div>
-
-      <form onSubmit={handleAdd} className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-4 dark:border-neutral-800">
-        <h2 className="text-sm font-medium">固定費を追加</h2>
-        <FixedCostFields categories={categories} value={newFields} onChange={setNewFields} />
-        {addError && <p className="text-sm text-red-600 dark:text-red-400">{addError}</p>}
-        <button type="submit" className="rounded-md bg-teal-600 px-4 py-2 text-sm font-medium text-white hover:bg-teal-700">
-          追加
-        </button>
-      </form>
     </div>
   );
 }

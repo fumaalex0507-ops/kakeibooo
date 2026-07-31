@@ -23,7 +23,6 @@ export default async function FixedCostsPage() {
 
   return (
     <div>
-      <h1 className="mb-6 text-lg font-semibold">固定費マスタ</h1>
       <FixedCostManager
         categories={(categories ?? []) as Category[]}
         initialFixedCosts={(fixedCosts ?? []) as FixedCost[]}
