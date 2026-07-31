@@ -1,15 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { evaluateExpression } from "@/lib/calculator";
+import { aggregateCategoryTotalsForMonth, resolveEffectiveBudgets } from "@/lib/calculations";
 import { CalculatorPopup } from "@/components/CalculatorPopup";
 import { CalculatorIcon } from "@/components/icons/CalculatorIcon";
-import { PAYERS, type Category } from "@/lib/types";
+import { BudgetProgress } from "@/components/BudgetProgress";
+import { colorForCategory, colorForPayer } from "@/lib/colors";
+import { PAYERS, type Budget, type Category, type MonthlyTotalRow } from "@/lib/types";
 
 interface Props {
   categories: Category[];
+  allCategories: Category[];
+  budgetCategories: Category[];
+  monthlyTotals: MonthlyTotalRow[];
+  allBudgets: Budget[];
 }
 
 function todayIso() {
@@ -23,7 +31,8 @@ function todayIso() {
   return `${year}-${month}-${day}`;
 }
 
-export function TransactionForm({ categories }: Props) {
+export function TransactionForm({ categories, allCategories, budgetCategories, monthlyTotals, allBudgets }: Props) {
+  const router = useRouter();
   const [date, setDate] = useState(todayIso());
   const [payerId, setPayerId] = useState(PAYERS[0]);
   const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
@@ -55,6 +64,16 @@ export function TransactionForm({ categories }: Props) {
   const canSubmit = !isNegativeSplit && !isTotalMissing && !hasInvalidExpression && !submitting;
 
   const splitDisplay = useMemo(() => splitAmount.toLocaleString("ja-JP"), [splitAmount]);
+
+  const yearMonth = date.slice(0, 7);
+  const effectiveBudgets = useMemo(
+    () => resolveEffectiveBudgets(allBudgets.filter((b) => b.payer_id === payerId), yearMonth),
+    [allBudgets, payerId, yearMonth]
+  );
+  const budgetCategoryTotals = useMemo(
+    () => aggregateCategoryTotalsForMonth(monthlyTotals, yearMonth, payerId),
+    [monthlyTotals, yearMonth, payerId]
+  );
 
   // On blur, resolve a typed expression (e.g. "500+300") down to its plain
   // numeric result, so the field reads like a calculator that just computed
@@ -94,9 +113,13 @@ export function TransactionForm({ categories }: Props) {
     setTotalAmount("");
     setOwnShare("0");
     setOtherShare("0");
+    // Budget totals were fetched server-side on page load — refresh so the
+    // progress bars below pick up this transaction's contribution.
+    router.refresh();
   }
 
   return (
+    <>
     <form onSubmit={handleSubmit} className="mx-auto flex max-w-md flex-col gap-4">
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium">日付</label>
@@ -111,22 +134,26 @@ export function TransactionForm({ categories }: Props) {
 
       <div className="flex flex-col gap-1">
         <label className="text-sm font-medium">支払い者</label>
-        <div className="inline-flex rounded-full border border-neutral-300 p-1 text-sm dark:border-neutral-700">
-          {PAYERS.map((payer) => (
-            <button
-              key={payer}
-              type="button"
-              onClick={() => setPayerId(payer)}
-              className={clsx(
-                "rounded-full px-3 py-1 transition-colors",
-                payerId === payer
-                  ? "bg-teal-600 text-white"
-                  : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              )}
-            >
-              {payer}
-            </button>
-          ))}
+        <div className="flex gap-2 text-sm">
+          {PAYERS.map((payer) => {
+            const isSelected = payerId === payer;
+            return (
+              <button
+                key={payer}
+                type="button"
+                onClick={() => setPayerId(payer)}
+                className={clsx(
+                  "rounded-md border px-3 py-1.5 font-medium transition-colors",
+                  isSelected
+                    ? "border-transparent text-white"
+                    : "border-neutral-300 text-neutral-600 hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                )}
+                style={isSelected ? { backgroundColor: colorForPayer(payer) } : undefined}
+              >
+                {payer}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -135,11 +162,12 @@ export function TransactionForm({ categories }: Props) {
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
+          className="w-fit rounded-full px-3 py-1.5 text-sm font-semibold text-white"
+          style={{ backgroundColor: colorForCategory(categoryId, allCategories) }}
           required
         >
           {categories.map((c) => (
-            <option key={c.id} value={c.id}>
+            <option key={c.id} value={c.id} className="bg-white dark:bg-neutral-900">
               {c.name}
             </option>
           ))}
@@ -178,7 +206,10 @@ export function TransactionForm({ categories }: Props) {
             inputMode="decimal"
             value={ownShare}
             onChange={(e) => setOwnShare(e.target.value)}
-            onFocus={() => setOwnTouched(false)}
+            onFocus={(e) => {
+              e.target.select();
+              setOwnTouched(false);
+            }}
             onBlur={() => {
               resolveOnBlur(ownShare, setOwnShare);
               setOwnTouched(true);
@@ -206,7 +237,10 @@ export function TransactionForm({ categories }: Props) {
             inputMode="decimal"
             value={otherShare}
             onChange={(e) => setOtherShare(e.target.value)}
-            onFocus={() => setOtherTouched(false)}
+            onFocus={(e) => {
+              e.target.select();
+              setOtherTouched(false);
+            }}
             onBlur={() => {
               resolveOnBlur(otherShare, setOtherShare);
               setOtherTouched(true);
@@ -271,5 +305,17 @@ export function TransactionForm({ categories }: Props) {
         />
       )}
     </form>
+    <div className="mx-auto mt-8 max-w-md">
+      <h2 className="mb-2 text-sm font-medium text-neutral-500 dark:text-neutral-400">
+        {payerId}の{yearMonth}予算
+      </h2>
+      <BudgetProgress
+        categories={budgetCategories}
+        budgetAmounts={effectiveBudgets}
+        categoryTotals={budgetCategoryTotals}
+        showEditorHint={false}
+      />
+    </div>
+    </>
   );
 }

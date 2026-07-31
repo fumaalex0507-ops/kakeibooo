@@ -5,6 +5,7 @@ interface Props {
   categories: Category[];
   budgetAmounts: Record<string, number>;
   categoryTotals: Record<string, number>;
+  showEditorHint?: boolean;
 }
 
 function statusFor(ratio: number) {
@@ -13,7 +14,7 @@ function statusFor(ratio: number) {
   return { label: "順調", classes: "bg-teal-600", text: "text-teal-700 dark:text-teal-400" };
 }
 
-export function BudgetProgress({ categories, budgetAmounts, categoryTotals }: Props) {
+export function BudgetProgress({ categories, budgetAmounts, categoryTotals, showEditorHint = true }: Props) {
   const rows = categories
     .filter((c) => (budgetAmounts[c.id] ?? 0) > 0)
     .map((category) => {
@@ -26,7 +27,8 @@ export function BudgetProgress({ categories, budgetAmounts, categoryTotals }: Pr
   if (rows.length === 0) {
     return (
       <p className="text-sm text-neutral-500 dark:text-neutral-400">
-        予算が設定されている費目はありません。下の「予算を編集」から設定できます。
+        予算が設定されている費目はありません。
+        {showEditorHint && "下の「予算を編集」から設定できます。"}
       </p>
     );
   }
