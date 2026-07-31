@@ -40,6 +40,12 @@ function fieldsToRow(fields: FixedCostFieldsValue) {
   };
 }
 
+// Mirrors the fieldsToRow invariant above: own_share > 0 means fully
+// self-paid, otherwise it's fully split.
+function shareLabel(fc: FixedCost): string {
+  return fc.own_share > 0 ? "自己負担" : "折半";
+}
+
 function fixedCostToFields(fc: FixedCost): FixedCostFieldsValue {
   return {
     title: fc.title,
@@ -62,48 +68,51 @@ function FixedCostFields({
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <input
-        value={value.title}
-        onChange={(e) => onChange({ ...value, title: e.target.value })}
-        placeholder="項目名（例: 家賃）"
-        className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-        required
-      />
       <div className="grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-2 rounded-md border border-neutral-300 px-3 dark:border-neutral-700">
-          <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: colorForCategory(value.categoryId, categories) }}
-          />
-          <select
-            value={value.categoryId}
-            onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
-            className="w-full bg-transparent py-2 text-sm dark:bg-neutral-900"
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">支払い者</label>
+          <div className="flex items-center rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+            <select
+              value={value.payerId}
+              onChange={(e) => onChange({ ...value, payerId: e.target.value as PayerId })}
+              className="w-fit rounded-full px-3 py-0.5 text-xs font-semibold text-white"
+              style={{ backgroundColor: colorForPayer(value.payerId) }}
+            >
+              {PAYERS.map((p) => (
+                <option key={p} value={p} className="bg-white dark:bg-neutral-900">
+                  {p}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="flex items-center gap-2 rounded-md border border-neutral-300 px-3 dark:border-neutral-700">
-          <span
-            className="h-2.5 w-2.5 shrink-0 rounded-full"
-            style={{ backgroundColor: colorForPayer(value.payerId) }}
-          />
-          <select
-            value={value.payerId}
-            onChange={(e) => onChange({ ...value, payerId: e.target.value as PayerId })}
-            className="w-full bg-transparent py-2 text-sm dark:bg-neutral-900"
-          >
-            {PAYERS.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium">分類</label>
+          <div className="flex items-center rounded-md border border-neutral-300 px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+            <select
+              value={value.categoryId}
+              onChange={(e) => onChange({ ...value, categoryId: e.target.value })}
+              className="w-fit rounded-full px-3 py-0.5 text-xs font-semibold text-white"
+              style={{ backgroundColor: colorForCategory(value.categoryId, categories) }}
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id} className="bg-white dark:bg-neutral-900">
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <label className="text-sm font-medium">項目名</label>
+        <input
+          value={value.title}
+          onChange={(e) => onChange({ ...value, title: e.target.value })}
+          placeholder="項目名（例: 家賃）"
+          className="rounded-md border border-neutral-300 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          required
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1">
@@ -213,24 +222,26 @@ function FixedCostRow({
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-md border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-800">
       <div className="flex flex-col items-start gap-1">
-        <span className="text-left font-medium">{fc.title}</span>
-        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="flex flex-wrap items-center gap-x-1 gap-y-0.5">
           <span
-            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
             style={{ backgroundColor: colorForPayer(fc.payer_id) }}
           >
             {fc.payer_id}
           </span>
           <span
-            className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+            className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
             style={{ backgroundColor: colorForCategory(fc.category_id, categories) }}
           >
             {categoryName(fc.category_id)}
           </span>
-          <span className="text-neutral-500 dark:text-neutral-400">
-            毎月{fc.day_of_month}日・¥{fc.total_amount.toLocaleString("ja-JP")}
-          </span>
         </div>
+        <span className="text-left">
+          <span className="font-medium">{fc.title}</span>{" "}
+          <span className="text-neutral-500 dark:text-neutral-400">
+            （毎月{fc.day_of_month}日・¥{fc.total_amount.toLocaleString("ja-JP")}・{shareLabel(fc)}）
+          </span>
+        </span>
       </div>
       <div className="ml-auto flex items-center gap-2">
         <button
