@@ -30,7 +30,7 @@ export function NavHeader() {
   }
 
   return (
-    <header className="flex flex-wrap items-center gap-3 border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
+    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2 dark:border-neutral-800 dark:bg-neutral-950">
       <nav className="flex gap-1">
         {LINKS.map((link) => (
           <Link
