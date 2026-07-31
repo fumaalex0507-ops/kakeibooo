@@ -29,7 +29,17 @@ export function CategoryPieChart({ categories, categoryTotals }: Props) {
       <div className="relative">
         <ResponsiveContainer width="100%" height={240}>
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={100} paddingAngle={1}>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={1}
+              animationDuration={900}
+            >
               {data.map((d) => (
                 <Cell key={d.id} fill={colorForCategory(d.id, categories)} />
               ))}

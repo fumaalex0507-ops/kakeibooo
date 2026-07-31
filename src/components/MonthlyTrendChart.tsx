@@ -60,7 +60,14 @@ export function MonthlyTrendChart({ data, categories, selectedCategoryId }: Prop
           )}
         />
         {barCategories.map((c) => (
-          <Bar key={c.id} dataKey={c.id} name={c.name} stackId="a" fill={colorForCategory(c.id, categories)} />
+          <Bar
+            key={c.id}
+            dataKey={c.id}
+            name={c.name}
+            stackId="a"
+            fill={colorForCategory(c.id, categories)}
+            animationDuration={900}
+          />
         ))}
       </BarChart>
     </ResponsiveContainer>

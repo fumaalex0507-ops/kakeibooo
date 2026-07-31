@@ -123,6 +123,7 @@ export function CumulativeSpendChart({ data, categories, allCategories, budgetAm
             stroke={colorForCategory(c.id, allCategories)}
             strokeWidth={2}
             dot={false}
+            animationDuration={900}
           />
         ))}
       </LineChart>
