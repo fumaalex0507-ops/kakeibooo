@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { format } from "date-fns";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { colorForCategory, colorForPayer } from "@/lib/colors";
@@ -286,6 +287,13 @@ export function FixedCostManager({ categories, initialFixedCosts }: Props) {
       setAddError(error.message);
       return;
     }
+
+    // Generate this month's transaction for the new fixed cost right away —
+    // AppInit's mount-time call already ran before this fixed cost existed,
+    // and won't fire again just from navigating to another tab.
+    await supabase.rpc("generate_fixed_cost_transactions", {
+      p_year_month: format(new Date(), "yyyy-MM"),
+    });
 
     setFixedCosts((prev) => [...prev, data as FixedCost]);
     setNewFields({
