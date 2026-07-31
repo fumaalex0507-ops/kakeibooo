@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
+import { RefreshIcon } from "@/components/icons/RefreshIcon";
 
 const LINKS = [
   { href: "/input", label: "入力" },
@@ -50,9 +51,11 @@ export function NavHeader() {
         type="button"
         onClick={handleRefresh}
         disabled={refreshing}
-        className="ml-auto rounded-md px-3 py-1.5 text-sm font-medium text-neutral-600 hover:bg-neutral-100 disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        aria-label="更新"
+        title="更新"
+        className="ml-auto rounded-md p-2 text-neutral-600 hover:bg-neutral-100 disabled:opacity-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
       >
-        {refreshing ? "更新中..." : "更新"}
+        <RefreshIcon className={clsx("h-5 w-5", refreshing && "animate-spin")} />
       </button>
     </header>
   );
