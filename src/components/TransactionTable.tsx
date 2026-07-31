@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
+import { colorForCategory, colorForPayer } from "@/lib/colors";
 import { PAYERS, type Category, type PayerId, type Transaction } from "@/lib/types";
 
 interface Props {
@@ -251,8 +252,22 @@ export function TransactionTable({ transactions: initialTransactions, categories
             ) : (
               <tr key={t.id} className="border-b border-neutral-100 dark:border-neutral-900">
                 <td className="py-2 pr-4">{t.date}</td>
-                <td className="py-2 pr-4">{t.payer_id}</td>
-                <td className="py-2 pr-4">{categoryName(t.category_id)}</td>
+                <td className="py-2 pr-4">
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                    style={{ backgroundColor: colorForPayer(t.payer_id) }}
+                  >
+                    {t.payer_id}
+                  </span>
+                </td>
+                <td className="py-2 pr-4">
+                  <span
+                    className="rounded-full px-1.5 py-0.5 text-[10px] font-semibold text-white"
+                    style={{ backgroundColor: colorForCategory(t.category_id, categories) }}
+                  >
+                    {categoryName(t.category_id)}
+                  </span>
+                </td>
                 <td className="py-2 pr-4 text-right">¥{t.total_amount.toLocaleString("ja-JP")}</td>
                 <td className="py-2 pr-4 text-right">¥{t.own_share.toLocaleString("ja-JP")}</td>
                 <td className="py-2 pr-4 text-right">¥{t.other_share.toLocaleString("ja-JP")}</td>
