@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import clsx from "clsx";
+import { colorForPayer } from "@/lib/colors";
 import { PAYERS, type PayerId } from "@/lib/types";
 
 export function PersonTabs({ current, basePath }: { current: PayerId; basePath: string }) {
@@ -15,22 +16,26 @@ export function PersonTabs({ current, basePath }: { current: PayerId; basePath: 
   }
 
   return (
-    <div className="inline-flex rounded-full border border-neutral-300 p-1 text-sm dark:border-neutral-700">
-      {PAYERS.map((payer) => (
-        <button
-          key={payer}
-          type="button"
-          onClick={() => navigate(payer)}
-          className={clsx(
-            "rounded-full px-3 py-1 transition-colors",
-            current === payer
-              ? "bg-teal-600 text-white"
-              : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
-          )}
-        >
-          {payer}
-        </button>
-      ))}
+    <div className="flex gap-2 text-sm">
+      {PAYERS.map((payer) => {
+        const isSelected = current === payer;
+        return (
+          <button
+            key={payer}
+            type="button"
+            onClick={() => navigate(payer)}
+            className={clsx(
+              "rounded-full px-3 py-1 transition-colors",
+              isSelected
+                ? "text-white"
+                : "text-neutral-600 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            )}
+            style={isSelected ? { backgroundColor: colorForPayer(payer) } : undefined}
+          >
+            {payer}
+          </button>
+        );
+      })}
     </div>
   );
 }
