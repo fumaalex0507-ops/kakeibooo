@@ -7,13 +7,7 @@ import { format } from "date-fns";
 import clsx from "clsx";
 import { supabase } from "@/lib/supabase/client";
 import { RefreshIcon } from "@/components/icons/RefreshIcon";
-
-const LINKS = [
-  { href: "/input", label: "入力" },
-  { href: "/settlement", label: "精算" },
-  { href: "/expenses", label: "分析" },
-  { href: "/fixed-costs", label: "固定費" },
-];
+import { NAV_LINKS } from "@/lib/navLinks";
 
 export function NavHeader() {
   const pathname = usePathname();
@@ -32,7 +26,7 @@ export function NavHeader() {
   return (
     <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2 dark:border-neutral-800 dark:bg-neutral-950">
       <nav className="flex gap-1">
-        {LINKS.map((link) => (
+        {NAV_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}

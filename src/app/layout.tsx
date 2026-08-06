@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AppInit } from "@/components/AppInit";
 import { NavHeader } from "@/components/NavHeader";
+import { SwipeNav } from "@/components/SwipeNav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -45,6 +46,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AppInit />
+        <SwipeNav />
         <NavHeader />
         <main className="flex-1 p-4">{children}</main>
       </body>
